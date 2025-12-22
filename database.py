@@ -97,23 +97,48 @@ def migrate_db():
             
             # Fix session unique constraint to allow multiple players per session
             logger.info("🔄 Fixing session unique constraint...")
-            constraint_fixes = [
-                # Drop old unique constraint on session_id
-                "ALTER TABLE sessions DROP CONSTRAINT IF EXISTS sessions_session_id_key CASCADE",
-                "DROP INDEX IF EXISTS ix_sessions_session_id CASCADE",
-                # Add composite unique constraint on (session_id, player_id)
-                "ALTER TABLE sessions ADD CONSTRAINT IF NOT EXISTS uq_session_player UNIQUE (session_id, player_id)",
-                # Recreate non-unique index on session_id
-                "CREATE INDEX IF NOT EXISTS ix_sessions_session_id ON sessions(session_id)"
-            ]
             
-            for fix in constraint_fixes:
-                try:
-                    conn.execute(text(fix))
+            # Drop old unique constraint on session_id
+            try:
+                conn.execute(text("ALTER TABLE sessions DROP CONSTRAINT IF EXISTS sessions_session_id_key CASCADE"))
+                conn.commit()
+                logger.info("✅ Dropped old session_id unique constraint")
+            except Exception as e:
+                logger.warning(f"⚠️ Drop constraint warning: {e}")
+            
+            # Drop old index
+            try:
+                conn.execute(text("DROP INDEX IF EXISTS ix_sessions_session_id CASCADE"))
+                conn.commit()
+                logger.info("✅ Dropped old session_id index")
+            except Exception as e:
+                logger.warning(f"⚠️ Drop index warning: {e}")
+            
+            # Add composite unique constraint (check if exists first)
+            try:
+                # Check if constraint already exists
+                result = conn.execute(text(
+                    "SELECT 1 FROM pg_constraint WHERE conname = 'uq_session_player'"
+                )).fetchone()
+                
+                if not result:
+                    conn.execute(text(
+                        "ALTER TABLE sessions ADD CONSTRAINT uq_session_player UNIQUE (session_id, player_id)"
+                    ))
                     conn.commit()
-                    logger.info(f"✅ Constraint fix: {fix[:60]}...")
-                except Exception as e:
-                    logger.warning(f"⚠️ Constraint fix warning: {e}")
+                    logger.info("✅ Added composite unique constraint (session_id, player_id)")
+                else:
+                    logger.info("✅ Composite unique constraint already exists")
+            except Exception as e:
+                logger.warning(f"⚠️ Add constraint warning: {e}")
+            
+            # Recreate non-unique index on session_id
+            try:
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_sessions_session_id ON sessions(session_id)"))
+                conn.commit()
+                logger.info("✅ Created non-unique index on session_id")
+            except Exception as e:
+                logger.warning(f"⚠️ Create index warning: {e}")
             
         logger.info("✅ Database migrations completed!")
         return True
