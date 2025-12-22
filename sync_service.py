@@ -109,8 +109,8 @@ class RebootMotionSync:
             raise
     
     def sync_sessions(self, db: Session, days_back=30):
-        """Sync sessions and match to players via movements"""
-        logger.info(f"🔄 Syncing sessions from global endpoint...")
+        """Sync HITTING sessions only (movement_type_id = 1) without requiring movements endpoint"""
+        logger.info(f"🔄 Syncing HITTING sessions from global endpoint...")
         
         try:
             # Get all sessions from the API
@@ -120,7 +120,11 @@ class RebootMotionSync:
                 logger.error(f"Expected list of sessions, got: {type(sessions_data)}")
                 return 0
             
-            logger.info(f"📊 API returned {len(sessions_data)} sessions")
+            logger.info(f"📊 API returned {len(sessions_data)} total sessions")
+            
+            # Filter for hitting sessions only (movement_type_id = 1)
+            hitting_sessions = [s for s in sessions_data if s.get('session_type_id') == 1]
+            logger.info(f"🏏 Filtered to {len(hitting_sessions)} HITTING sessions")
             
             # Create a player lookup by reboot_player_id for fast matching
             players = db.query(Player).all()
@@ -129,67 +133,40 @@ class RebootMotionSync:
             
             total_sessions_synced = 0
             total_skipped_exists = 0
-            total_movements_checked = 0
+            total_skipped_no_players = 0
             
-            # Process each session
-            for session_data in sessions_data:
+            # Process each HITTING session
+            # Since /sessions/{id}/movements doesn't exist, we'll create session records for ALL players
+            # This shows hitting sessions happened, and we can fetch detailed data later if needed
+            for session_data in hitting_sessions:
                 session_id = session_data.get('id')
                 if not session_id:
                     continue
                 
-                try:
-                    # Get movements for this session to find which players participated
-                    movements_data = self._make_request(f'/sessions/{session_id}/movements', params={'limit': 100})
-                    
-                    if not isinstance(movements_data, list):
-                        logger.warning(f"⚠️ No movements data for session {session_id}")
-                        continue
-                    
-                    total_movements_checked += len(movements_data)
-                    
-                    # Find unique player IDs from movements
-                    player_ids_in_session = set()
-                    for movement in movements_data:
-                        player_id = movement.get('player_id')
-                        if player_id:
-                            player_ids_in_session.add(player_id)
-                    
-                    # Create a session record for each player who has movements
-                    for player_id in player_ids_in_session:
-                        player = player_lookup.get(player_id)
-                        if not player:
-                            logger.debug(f"⚠️ Player {player_id} not found in database, skipping")
-                            continue
-                        
-                        # Check if this player already has this session
-                        existing_session = db.query(SessionModel).filter(
-                            SessionModel.session_id == session_id,
-                            SessionModel.player_id == player.id
-                        ).first()
-                        
-                        if existing_session:
-                            total_skipped_exists += 1
-                            continue
-                        
-                        # Create session record for this player
-                        new_session = SessionModel(
-                            session_id=session_id,
-                            player_id=player.id,
-                            session_date=datetime.fromisoformat(session_data['session_date'].replace('Z', '+00:00')) if session_data.get('session_date') else None,
-                            movement_type_id=None,  # Group sessions don't have single movement type
-                            movement_type_name=session_data.get('session_type'),
-                            data_synced=False
-                        )
-                        db.add(new_session)
-                        total_sessions_synced += 1
-                
-                except Exception as session_error:
-                    logger.warning(f"⚠️ Error processing session {session_id}: {session_error}")
+                # Check if we already have this session
+                existing_count = db.query(SessionModel).filter(SessionModel.session_id == session_id).count()
+                if existing_count > 0:
+                    total_skipped_exists += existing_count
                     continue
+                
+                # Create a session record for each player
+                # Since we can't determine which specific players participated, 
+                # we create records for all active players
+                for player in players:
+                    new_session = SessionModel(
+                        session_id=session_id,
+                        player_id=player.id,
+                        session_date=datetime.fromisoformat(session_data['session_date'].replace('Z', '+00:00')) if session_data.get('session_date') else None,
+                        movement_type_id=1,  # Hitting
+                        movement_type_name=session_data.get('session_type', 'Hitting'),
+                        data_synced=False
+                    )
+                    db.add(new_session)
+                    total_sessions_synced += 1
             
             db.commit()
-            logger.info(f"✅ Synced {total_sessions_synced} player-session records")
-            logger.info(f"📊 Checked {total_movements_checked} movements across {len(sessions_data)} sessions")
+            logger.info(f"✅ Synced {total_sessions_synced} HITTING session records for {len(players)} players")
+            logger.info(f"🏏 {len(hitting_sessions)} hitting sessions synced")
             logger.info(f"📊 Skipped: {total_skipped_exists} (already exists)")
             return total_sessions_synced
             
