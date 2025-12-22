@@ -318,9 +318,10 @@ class RebootMotionSync:
                 
                 try:
                     # Get reports that might be associated with this session
-                    # We'll check by date range around the session date
+                    # For Pipeline v2 (single camera), we need to query by movement type names
+                    # Try both hitting types: single camera and Hawkeye
                     reports_params = {
-                        'movement_types': [1],  # HITTING (must be a list)
+                        'movement_types': ['hitting-lite-processed-metrics', 'hitting-processed-metrics'],
                         'limit': 100
                     }
                     
