@@ -221,54 +221,38 @@ class RebootMotionSync:
             
             logger.info(f"📊 API returned {len(sessions_data)} total sessions")
             
-            # Log first session for debugging
+            # Log first session for debugging - show ALL fields
             if sessions_data:
-                logger.info(f"🔍 Sample session data: {sessions_data[0]}")
+                import json
+                logger.info(f"🔍 Sample session (FULL): {json.dumps(sessions_data[0], indent=2)}")
             
             # Filter for hitting sessions
             # Per Robert: movement type for hitting is "baseball-hitting"
+            # BUT: /sessions endpoint doesn't return movement_type field
+            # WORKAROUND: Import ALL sessions for now, filter by calling individual /session/{id}
             cutoff_date = datetime.utcnow() - timedelta(days=days_back)
+            # Since /sessions endpoint doesn't return movement_type,
+            # we need to fetch each session individually to check its type
             hitting_sessions = []
             
-            # Define hitting session identifiers
-            hitting_movement_types = [
-                'baseball-hitting',  # Correct movement type per Robert
-                'hitting',           # Legacy/fallback
-            ]
-            
             for session in sessions_data:
-                # Extract session identifiers
-                session_id = session.get('id', 'unknown')
+                session_id = session.get('id')
+                if not session_id:
+                    continue
                 
-                # Get movement_type field (should contain "baseball-hitting")
-                movement_type_raw = session.get('movement_type', '')
-                
-                # Convert to string if it's a dict
-                if isinstance(movement_type_raw, dict):
-                    movement_type = str(movement_type_raw.get('name', '') or movement_type_raw.get('slug', '')).lower()
-                else:
-                    movement_type = str(movement_type_raw).lower() if movement_type_raw else ''
-                
-                logger.info(f"🔍 Checking session {session_id[:8] if isinstance(session_id, str) else session_id}: "
-                           f"movement_type='{movement_type}'")
-                
-                # Check if it's a hitting session (movement_type should be "baseball-hitting")
-                is_hitting = movement_type in hitting_movement_types or 'hitting' in movement_type
-                
-                if is_hitting:
-                    # Check date if available
-                    session_date_str = session.get('session_date')
-                    if session_date_str:
-                        try:
-                            session_date = datetime.fromisoformat(session_date_str.replace('Z', '+00:00'))
-                            if session_date >= cutoff_date:
-                                hitting_sessions.append(session)
-                        except ValueError:
-                            # If date parsing fails, include it anyway
+                # Check date if available
+                session_date_str = session.get('session_date')
+                if session_date_str:
+                    try:
+                        session_date = datetime.fromisoformat(session_date_str.replace('Z', '+00:00'))
+                        if session_date >= cutoff_date:
                             hitting_sessions.append(session)
-                    else:
-                        # No date info, include it
+                    except ValueError:
+                        # If date parsing fails, include it anyway
                         hitting_sessions.append(session)
+                else:
+                    # No date info, include it
+                    hitting_sessions.append(session)
             
             logger.info(f"🏏 Filtered to {len(hitting_sessions)} HITTING sessions in date range")
             
@@ -293,15 +277,30 @@ class RebootMotionSync:
                     except ValueError:
                         pass
                 
-                # Fetch individual session details to get participant information
+                # Fetch individual session details to get participant information AND movement type
                 # Per Robert's guidance: Use /session/{session_id} to get Players object
                 logger.info(f"📋 Fetching session details for {session_id[:8]}...")
                 
                 player_ids_in_session = set()
                 
                 try:
-                    # Get detailed session info including participants
+                    # Get detailed session info including participants and movement_type
                     session_details = self._make_request(f'/session/{session_id}')
+                    
+                    # Check movement_type - only process hitting sessions
+                    movement_type_raw = session_details.get('movement_type', '')
+                    if isinstance(movement_type_raw, dict):
+                        movement_type = str(movement_type_raw.get('name', '') or movement_type_raw.get('slug', '')).lower()
+                    else:
+                        movement_type = str(movement_type_raw).lower() if movement_type_raw else ''
+                    
+                    logger.info(f"🔍 Session {session_id[:8]}: movement_type='{movement_type}'")
+                    
+                    # Skip if not a hitting session
+                    if movement_type and 'hitting' not in movement_type:
+                        logger.info(f"⏭️ Skipping non-hitting session {session_id[:8]}")
+                        total_skipped_no_data += 1
+                        continue
                     
                     # Extract players from the session response
                     # Robert mentioned a "Players" object should be returned
