@@ -1,4 +1,4 @@
-"""
+""
 Production FastAPI Backend - Reboot Motion Athlete App
 With PostgreSQL Database Integration
 """
@@ -14,6 +14,7 @@ import logging
 # Import database and models
 from database import get_db, init_db, check_db_connection
 from models import Player, Session as SessionModel, BiomechanicsData, SyncLog
+from sync_service import RebootMotionSync
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -271,14 +272,66 @@ def get_sync_status(db: Session = Depends(get_db)):
 
 # Trigger manual sync
 @app.post("/sync/trigger")
-def trigger_sync():
-    """Trigger manual data sync (placeholder - implement sync_service.py)"""
-    # This will be implemented in sync_service.py
-    return {
-        "status": "sync_not_implemented",
-        "message": "Sync service needs to be configured. See sync_service.py",
-        "note": "Add your Reboot Motion API key to environment variables and deploy sync service"
-    }
+async def trigger_sync(db: Session = Depends(get_db)):
+    """Trigger manual data sync from Reboot Motion API"""
+    try:
+        # Check if API key is configured
+        api_key = os.environ.get("REBOOT_API_KEY")
+        if not api_key:
+            raise HTTPException(
+                status_code=500,
+                detail="REBOOT_API_KEY environment variable not set"
+            )
+        
+        # Initialize sync service
+        sync_service = RebootMotionSync(api_key=api_key, db_session=db)
+        
+        logger.info("🔄 Starting data sync from Reboot Motion API...")
+        
+        # Create sync log entry
+        sync_log = SyncLog(
+            started_at=datetime.now(),
+            status="in_progress"
+        )
+        db.add(sync_log)
+        db.commit()
+        
+        try:
+            # Perform sync
+            result = await sync_service.sync_all_data()
+            
+            # Update sync log
+            sync_log.completed_at = datetime.now()
+            sync_log.status = "completed"
+            sync_log.players_synced = result.get("players_synced", 0)
+            sync_log.sessions_synced = result.get("sessions_synced", 0)
+            sync_log.biomechanics_synced = result.get("biomechanics_synced", 0)
+            sync_log.error_message = None
+            db.commit()
+            
+            logger.info(f"✅ Sync completed: {result['players_synced']} players, {result['sessions_synced']} sessions")
+            
+            return {
+                "status": "success",
+                "message": "Data sync completed successfully",
+                **result
+            }
+            
+        except Exception as sync_error:
+            # Update sync log with error
+            sync_log.completed_at = datetime.now()
+            sync_log.status = "failed"
+            sync_log.error_message = str(sync_error)
+            db.commit()
+            
+            logger.error(f"❌ Sync failed: {sync_error}")
+            raise HTTPException(status_code=500, detail=f"Sync failed: {str(sync_error)}")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error triggering sync: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # Get database stats
