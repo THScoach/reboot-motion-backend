@@ -73,7 +73,7 @@ def check_db_connection():
 
 def migrate_db():
     """
-    Run database migrations to add missing columns
+    Run database migrations to add missing columns and fix constraints
     """
     try:
         from sqlalchemy import text
@@ -94,6 +94,26 @@ def migrate_db():
                     logger.info(f"✅ Migration executed: {migration[:50]}...")
                 except Exception as e:
                     logger.warning(f"⚠️ Migration warning: {e}")
+            
+            # Fix session unique constraint to allow multiple players per session
+            logger.info("🔄 Fixing session unique constraint...")
+            constraint_fixes = [
+                # Drop old unique constraint on session_id
+                "ALTER TABLE sessions DROP CONSTRAINT IF EXISTS sessions_session_id_key CASCADE",
+                "DROP INDEX IF EXISTS ix_sessions_session_id CASCADE",
+                # Add composite unique constraint on (session_id, player_id)
+                "ALTER TABLE sessions ADD CONSTRAINT IF NOT EXISTS uq_session_player UNIQUE (session_id, player_id)",
+                # Recreate non-unique index on session_id
+                "CREATE INDEX IF NOT EXISTS ix_sessions_session_id ON sessions(session_id)"
+            ]
+            
+            for fix in constraint_fixes:
+                try:
+                    conn.execute(text(fix))
+                    conn.commit()
+                    logger.info(f"✅ Constraint fix: {fix[:60]}...")
+                except Exception as e:
+                    logger.warning(f"⚠️ Constraint fix warning: {e}")
             
         logger.info("✅ Database migrations completed!")
         return True

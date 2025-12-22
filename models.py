@@ -3,7 +3,7 @@ Database Models for Reboot Motion Athlete App
 SQLAlchemy ORM models for PostgreSQL
 """
 
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, JSON, Text
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, JSON, Text, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -53,7 +53,7 @@ class Session(Base):
     __tablename__ = 'sessions'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    session_id = Column(String(100), unique=True, nullable=False, index=True)
+    session_id = Column(String(100), nullable=False, index=True)
     player_id = Column(Integer, ForeignKey('players.id', ondelete='CASCADE'), nullable=False, index=True)
     session_date = Column(DateTime, index=True)
     movement_type_id = Column(Integer)
@@ -61,6 +61,11 @@ class Session(Base):
     data_synced = Column(Boolean, default=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Composite unique constraint: same session can have multiple players
+    __table_args__ = (
+        UniqueConstraint('session_id', 'player_id', name='uq_session_player'),
+    )
     
     # Relationships
     player = relationship("Player", back_populates="sessions")
