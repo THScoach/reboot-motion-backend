@@ -225,53 +225,35 @@ class RebootMotionSync:
             if sessions_data:
                 logger.info(f"🔍 Sample session data: {sessions_data[0]}")
             
-            # Filter for hitting sessions - includes both single camera and Hawkeye
-            # Session types: "hitting-lite-processed-metrics" (single camera) and "hitting-processed-metrics" (Hawkeye)
+            # Filter for hitting sessions
+            # Per Robert: movement type for hitting is "baseball-hitting"
             cutoff_date = datetime.utcnow() - timedelta(days=days_back)
             hitting_sessions = []
             
             # Define hitting session identifiers
-            hitting_type_ids = [1]  # movement_type_id for hitting
-            hitting_session_types = [
-                'hitting-lite-processed-metrics',  # Single camera
-                'hitting-processed-metrics',        # Hawkeye
-                'hitting'                           # Generic hitting
+            hitting_movement_types = [
+                'baseball-hitting',  # Correct movement type per Robert
+                'hitting',           # Legacy/fallback
             ]
             
             for session in sessions_data:
                 # Extract session identifiers
                 session_id = session.get('id', 'unknown')
-                session_type_id = session.get('session_type_id')
-                movement_type_id = session.get('movement_type_id')
                 
-                # Handle session_type and session_type_slug - they might be strings or dicts
-                session_type_raw = session.get('session_type', '')
-                session_type_slug_raw = session.get('session_type_slug', '')
+                # Get movement_type field (should contain "baseball-hitting")
+                movement_type_raw = session.get('movement_type', '')
                 
-                # Convert to string if needed
-                if isinstance(session_type_raw, dict):
-                    session_type = str(session_type_raw.get('name', '') or session_type_raw.get('slug', '')).lower()
+                # Convert to string if it's a dict
+                if isinstance(movement_type_raw, dict):
+                    movement_type = str(movement_type_raw.get('name', '') or movement_type_raw.get('slug', '')).lower()
                 else:
-                    session_type = str(session_type_raw).lower() if session_type_raw else ''
-                
-                if isinstance(session_type_slug_raw, dict):
-                    session_type_slug = str(session_type_slug_raw.get('slug', '') or session_type_slug_raw.get('name', '')).lower()
-                else:
-                    session_type_slug = str(session_type_slug_raw).lower() if session_type_slug_raw else ''
+                    movement_type = str(movement_type_raw).lower() if movement_type_raw else ''
                 
                 logger.info(f"🔍 Checking session {session_id[:8] if isinstance(session_id, str) else session_id}: "
-                           f"session_type_id={session_type_id}, movement_type_id={movement_type_id}, "
-                           f"session_type='{session_type}', session_type_slug='{session_type_slug}'")
+                           f"movement_type='{movement_type}'")
                 
-                # Check if it's a hitting session by ID, type name, or slug
-                is_hitting = (
-                    session_type_id in hitting_type_ids or
-                    movement_type_id in hitting_type_ids or
-                    session_type in hitting_session_types or
-                    session_type_slug in hitting_session_types or
-                    'hitting' in session_type or
-                    'hitting' in session_type_slug
-                )
+                # Check if it's a hitting session (movement_type should be "baseball-hitting")
+                is_hitting = movement_type in hitting_movement_types or 'hitting' in movement_type
                 
                 if is_hitting:
                     # Check date if available
@@ -311,29 +293,42 @@ class RebootMotionSync:
                     except ValueError:
                         pass
                 
-                # For Pipeline v2, import sessions for ALL players
-                # Since /processed_data and /reports don't work as expected,
-                # we'll create session records and handle player participation later
-                logger.info(f"📋 Creating session record for {session_id[:8]}...")
+                # Fetch individual session details to get participant information
+                # Per Robert's guidance: Use /session/{session_id} to get Players object
+                logger.info(f"📋 Fetching session details for {session_id[:8]}...")
                 
-                # Get session participants from the session data if available
-                participants = session_data.get('participants', [])
                 player_ids_in_session = set()
                 
-                # Extract player IDs from participants
-                for participant in participants:
-                    if isinstance(participant, dict):
-                        pid = participant.get('org_player_id') or participant.get('player_id')
-                        if pid:
-                            player_ids_in_session.add(str(pid))
-                
-                # If no participants listed, we'll need to create for all players
-                # (This matches the current Reboot API behavior)
-                if not player_ids_in_session:
-                    logger.info(f"⚠️ No participants listed for session {session_id[:8]}, will check per player")
-                    # We'll try to create for all players and let the database handle uniqueness
-                else:
-                    logger.info(f"📊 Found {len(player_ids_in_session)} participants for session {session_id[:8]}")
+                try:
+                    # Get detailed session info including participants
+                    session_details = self._make_request(f'/session/{session_id}')
+                    
+                    # Extract players from the session response
+                    # Robert mentioned a "Players" object should be returned
+                    players_in_session = session_details.get('players', [])
+                    
+                    if not players_in_session:
+                        # Try alternative field names
+                        players_in_session = session_details.get('Players', []) or session_details.get('participants', [])
+                    
+                    # Extract player IDs
+                    for player_data in players_in_session:
+                        if isinstance(player_data, dict):
+                            pid = player_data.get('org_player_id') or player_data.get('player_id') or player_data.get('id')
+                            if pid:
+                                player_ids_in_session.add(str(pid))
+                    
+                    if player_ids_in_session:
+                        logger.info(f"📊 Found {len(player_ids_in_session)} participants in session {session_id[:8]}")
+                    else:
+                        logger.warning(f"⚠️ No participants found for session {session_id[:8]}, skipping...")
+                        total_skipped_no_data += 1
+                        continue
+                        
+                except Exception as e:
+                    logger.warning(f"⚠️ Could not fetch session details for {session_id[:8]}: {e}")
+                    total_skipped_no_data += 1
+                    continue
                 
                 try:
                     # Create session records for each player
@@ -358,7 +353,7 @@ class RebootMotionSync:
                             player_id=player.id,
                             session_date=session_date,
                             movement_type_id=1,  # Hitting
-                            movement_type_name='Hitting',
+                            movement_type_name='baseball-hitting',  # Per Robert's guidance
                             data_synced=False
                         )
                         db.add(new_session)
