@@ -225,19 +225,42 @@ class RebootMotionSync:
             if sessions_data:
                 logger.info(f"🔍 Sample session data: {sessions_data[0]}")
             
-            # Filter for hitting sessions (movement_type_id = 1)
-            # and sessions within the date range
+            # Filter for hitting sessions - includes both single camera and Hawkeye
+            # Session types: "hitting-lite-processed-metrics" (single camera) and "hitting-processed-metrics" (Hawkeye)
             cutoff_date = datetime.utcnow() - timedelta(days=days_back)
             hitting_sessions = []
             
+            # Define hitting session identifiers
+            hitting_type_ids = [1]  # movement_type_id for hitting
+            hitting_session_types = [
+                'hitting-lite-processed-metrics',  # Single camera
+                'hitting-processed-metrics',        # Hawkeye
+                'hitting'                           # Generic hitting
+            ]
+            
             for session in sessions_data:
-                # Log the session type we're checking
+                # Extract session identifiers
+                session_id = session.get('id', 'unknown')
                 session_type_id = session.get('session_type_id')
                 movement_type_id = session.get('movement_type_id')
-                logger.info(f"🔍 Checking session {session.get('id', 'unknown')[:8]}: session_type_id={session_type_id}, movement_type_id={movement_type_id}")
+                session_type = session.get('session_type', '').lower()
+                session_type_slug = session.get('session_type_slug', '').lower()
                 
-                # Check if it's a hitting session
-                if session.get('session_type_id') == 1 or session.get('movement_type_id') == 1:
+                logger.info(f"🔍 Checking session {session_id[:8] if isinstance(session_id, str) else session_id}: "
+                           f"session_type_id={session_type_id}, movement_type_id={movement_type_id}, "
+                           f"session_type='{session_type}', session_type_slug='{session_type_slug}'")
+                
+                # Check if it's a hitting session by ID, type name, or slug
+                is_hitting = (
+                    session_type_id in hitting_type_ids or
+                    movement_type_id in hitting_type_ids or
+                    session_type in hitting_session_types or
+                    session_type_slug in hitting_session_types or
+                    'hitting' in session_type or
+                    'hitting' in session_type_slug
+                )
+                
+                if is_hitting:
                     # Check date if available
                     session_date_str = session.get('session_date')
                     if session_date_str:
