@@ -12,7 +12,7 @@ import os
 import logging
 
 # Import database and models
-from database import get_db, init_db, check_db_connection
+from database import get_db, init_db, check_db_connection, migrate_db
 from models import Player, Session as SessionModel, BiomechanicsData, SyncLog
 from sync_service import RebootMotionSync
 
@@ -49,6 +49,8 @@ async def startup_event():
         try:
             init_db()
             logger.info("✅ Database tables ready")
+            # Run migrations to add any missing columns
+            migrate_db()
         except Exception as e:
             logger.error(f"❌ Error initializing database: {e}")
     else:

@@ -69,3 +69,34 @@ def check_db_connection():
     except Exception as e:
         logger.error(f"❌ Database connection failed: {e}")
         return False
+
+
+def migrate_db():
+    """
+    Run database migrations to add missing columns
+    """
+    try:
+        from sqlalchemy import text
+        logger.info("🔄 Running database migrations...")
+        
+        with engine.connect() as conn:
+            # Add new columns to sync_log table if they don't exist
+            migrations = [
+                "ALTER TABLE sync_log ADD COLUMN IF NOT EXISTS players_synced INTEGER DEFAULT 0",
+                "ALTER TABLE sync_log ADD COLUMN IF NOT EXISTS sessions_synced INTEGER DEFAULT 0",
+                "ALTER TABLE sync_log ADD COLUMN IF NOT EXISTS biomechanics_synced INTEGER DEFAULT 0",
+            ]
+            
+            for migration in migrations:
+                try:
+                    conn.execute(text(migration))
+                    conn.commit()
+                    logger.info(f"✅ Migration executed: {migration[:50]}...")
+                except Exception as e:
+                    logger.warning(f"⚠️ Migration warning: {e}")
+            
+        logger.info("✅ Database migrations completed!")
+        return True
+    except Exception as e:
+        logger.error(f"❌ Database migration failed: {e}")
+        return False
