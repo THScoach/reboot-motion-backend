@@ -243,8 +243,21 @@ class RebootMotionSync:
                 session_id = session.get('id', 'unknown')
                 session_type_id = session.get('session_type_id')
                 movement_type_id = session.get('movement_type_id')
-                session_type = session.get('session_type', '').lower()
-                session_type_slug = session.get('session_type_slug', '').lower()
+                
+                # Handle session_type and session_type_slug - they might be strings or dicts
+                session_type_raw = session.get('session_type', '')
+                session_type_slug_raw = session.get('session_type_slug', '')
+                
+                # Convert to string if needed
+                if isinstance(session_type_raw, dict):
+                    session_type = str(session_type_raw.get('name', '') or session_type_raw.get('slug', '')).lower()
+                else:
+                    session_type = str(session_type_raw).lower() if session_type_raw else ''
+                
+                if isinstance(session_type_slug_raw, dict):
+                    session_type_slug = str(session_type_slug_raw.get('slug', '') or session_type_slug_raw.get('name', '')).lower()
+                else:
+                    session_type_slug = str(session_type_slug_raw).lower() if session_type_slug_raw else ''
                 
                 logger.info(f"🔍 Checking session {session_id[:8] if isinstance(session_id, str) else session_id}: "
                            f"session_type_id={session_type_id}, movement_type_id={movement_type_id}, "
