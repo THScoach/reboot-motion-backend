@@ -311,49 +311,85 @@ class RebootMotionSync:
                     except ValueError:
                         pass
                 
-                # Check each player to see if they have processed data for this session
-                for player in players:
-                    # Check if session record already exists
-                    existing_session = db.query(SessionModel).filter(
-                        SessionModel.session_id == session_id,
-                        SessionModel.player_id == player.id
-                    ).first()
+                # For Pipeline v2 (single camera), /processed_data doesn't work
+                # Instead, we'll use /reports to find which sessions have data
+                # Query reports for this session
+                logger.info(f"📋 Checking reports for session {session_id[:8]}...")
+                
+                try:
+                    # Get reports that might be associated with this session
+                    # We'll check by date range around the session date
+                    reports_params = {
+                        'movement_type_id': 1,  # HITTING
+                        'limit': 100
+                    }
                     
-                    if existing_session:
-                        total_skipped_exists += 1
-                        continue
+                    # If we have a session date, filter reports by date
+                    if session_date:
+                        # Format date as YYYY-MM-DD
+                        date_str = session_date.strftime('%Y-%m-%d')
+                        reports_params['created_at'] = [date_str, date_str]
                     
-                    # Use /processed_data to check if this player has data for this session
-                    try:
-                        processed_data = self._make_request('/processed_data', params={
-                            'session_id': session_id,
-                            'movement_type_id': 1,  # HITTING
-                            'org_player_id': player.org_player_id
-                        })
+                    reports = self._make_request('/reports', params=reports_params)
+                    
+                    # Check if any reports match this session
+                    # Reports should have player info we can match
+                    session_has_data = False
+                    session_player_ids = set()
+                    
+                    if isinstance(reports, list):
+                        for report in reports:
+                            # Check if this report belongs to this session
+                            # The report might have session_id or we match by date/player
+                            report_session_id = report.get('session_id') or report.get('mocap_session_id')
+                            
+                            if report_session_id == session_id:
+                                session_has_data = True
+                                # Extract player identifiers from report
+                                org_player_id = report.get('org_player_id')
+                                if org_player_id:
+                                    session_player_ids.add(org_player_id)
+                    
+                    # Create session records for players found in reports
+                    if session_has_data and session_player_ids:
+                        logger.info(f"📊 Found {len(session_player_ids)} players with reports for session {session_id[:8]}")
                         
-                        # If we got data back, this player participated
-                        if processed_data and (isinstance(processed_data, dict) or (isinstance(processed_data, list) and len(processed_data) > 0)):
+                        for player in players:
+                            if player.org_player_id not in session_player_ids:
+                                continue
+                            
+                            # Check if session record already exists
+                            existing_session = db.query(SessionModel).filter(
+                                SessionModel.session_id == session_id,
+                                SessionModel.player_id == player.id
+                            ).first()
+                            
+                            if existing_session:
+                                total_skipped_exists += 1
+                                continue
+                            
+                            # Create session record
                             new_session = SessionModel(
                                 session_id=session_id,
                                 player_id=player.id,
                                 session_date=session_date,
                                 movement_type_id=1,  # Hitting
                                 movement_type_name='Hitting',
-                                data_synced=False  # Will be set to True after biomechanics sync
+                                data_synced=False
                             )
                             db.add(new_session)
                             total_sessions_created += 1
                             logger.info(f"✅ Created session record: {player.first_name} {player.last_name} - {session_id[:8]}")
-                        else:
-                            total_skipped_no_data += 1
-                    
-                    except requests.exceptions.HTTPError as e:
-                        # 404 or other error means no data for this player
-                        if hasattr(e, 'response') and e.response is not None and e.response.status_code == 404:
-                            total_skipped_no_data += 1
-                        else:
-                            logger.warning(f"⚠️ Error checking processed data for player {player.org_player_id}: {e}")
-                            total_skipped_no_data += 1
+                    else:
+                        logger.info(f"ℹ️ No reports found for session {session_id[:8]}, skipping...")
+                        total_skipped_no_data += 1
+                
+                except requests.exceptions.HTTPError as e:
+                    logger.warning(f"⚠️ Error checking reports for session {session_id}: {e}")
+                    total_skipped_no_data += 1
+                except Exception as e:
+                    logger.error(f"❌ Error processing session {session_id}: {e}")
+                    total_skipped_no_data += 1
             
             db.commit()
             logger.info(f"✅ Created {total_sessions_created} session records")
