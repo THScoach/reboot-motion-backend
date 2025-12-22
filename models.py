@@ -120,9 +120,12 @@ class SyncLog(Base):
     __tablename__ = 'sync_log'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    sync_type = Column(String(50), index=True)  # 'players', 'sessions', 'biomechanics'
-    status = Column(String(20), index=True)  # 'success', 'failed', 'in_progress'
+    sync_type = Column(String(50), index=True)  # 'players', 'sessions', 'biomechanics', 'full_sync'
+    status = Column(String(20), index=True)  # 'success', 'failed', 'in_progress', 'completed'
     records_synced = Column(Integer, default=0)
+    players_synced = Column(Integer, default=0)
+    sessions_synced = Column(Integer, default=0)
+    biomechanics_synced = Column(Integer, default=0)
     error_message = Column(Text)
     started_at = Column(DateTime, default=datetime.utcnow, index=True)
     completed_at = Column(DateTime)
@@ -134,6 +137,9 @@ class SyncLog(Base):
             'sync_type': self.sync_type,
             'status': self.status,
             'records_synced': self.records_synced,
+            'players_synced': self.players_synced,
+            'sessions_synced': self.sessions_synced,
+            'biomechanics_synced': self.biomechanics_synced,
             'error_message': self.error_message,
             'started_at': self.started_at.isoformat() if self.started_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None
