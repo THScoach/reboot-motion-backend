@@ -275,16 +275,18 @@ def get_sync_status(db: Session = Depends(get_db)):
 async def trigger_sync(db: Session = Depends(get_db)):
     """Trigger manual data sync from Reboot Motion API"""
     try:
-        # Check if API key is configured
-        api_key = os.environ.get("REBOOT_API_KEY")
-        if not api_key:
+        # Check if OAuth credentials are configured
+        username = os.environ.get("REBOOT_USERNAME")
+        password = os.environ.get("REBOOT_PASSWORD")
+        
+        if not username or not password:
             raise HTTPException(
                 status_code=500,
-                detail="REBOOT_API_KEY environment variable not set"
+                detail="REBOOT_USERNAME and REBOOT_PASSWORD environment variables must be set"
             )
         
-        # Initialize sync service
-        sync_service = RebootMotionSync(api_key=api_key, db_session=db)
+        # Initialize sync service with OAuth credentials
+        sync_service = RebootMotionSync(username=username, password=password, db_session=db)
         
         logger.info("🔄 Starting data sync from Reboot Motion API...")
         
