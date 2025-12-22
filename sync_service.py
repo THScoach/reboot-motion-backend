@@ -320,7 +320,7 @@ class RebootMotionSync:
                     # Get reports that might be associated with this session
                     # We'll check by date range around the session date
                     reports_params = {
-                        'movement_type_id': 1,  # HITTING
+                        'movement_types': [1],  # HITTING (must be a list)
                         'limit': 100
                     }
                     
@@ -328,7 +328,8 @@ class RebootMotionSync:
                     if session_date:
                         # Format date as YYYY-MM-DD
                         date_str = session_date.strftime('%Y-%m-%d')
-                        reports_params['created_at'] = [date_str, date_str]
+                        reports_params['created_at_from'] = date_str
+                        reports_params['created_at_to'] = date_str
                     
                     reports = self._make_request('/reports', params=reports_params)
                     
