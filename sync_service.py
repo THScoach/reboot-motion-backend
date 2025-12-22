@@ -221,12 +221,21 @@ class RebootMotionSync:
             
             logger.info(f"📊 API returned {len(sessions_data)} total sessions")
             
+            # Log first session for debugging
+            if sessions_data:
+                logger.info(f"🔍 Sample session data: {sessions_data[0]}")
+            
             # Filter for hitting sessions (movement_type_id = 1)
             # and sessions within the date range
             cutoff_date = datetime.utcnow() - timedelta(days=days_back)
             hitting_sessions = []
             
             for session in sessions_data:
+                # Log the session type we're checking
+                session_type_id = session.get('session_type_id')
+                movement_type_id = session.get('movement_type_id')
+                logger.info(f"🔍 Checking session {session.get('id', 'unknown')[:8]}: session_type_id={session_type_id}, movement_type_id={movement_type_id}")
+                
                 # Check if it's a hitting session
                 if session.get('session_type_id') == 1 or session.get('movement_type_id') == 1:
                     # Check date if available
