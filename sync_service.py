@@ -116,43 +116,66 @@ class RebootMotionSync:
             # Get sessions from API
             sessions_data = self._make_request('/sessions', params={'limit': 100})
             
+            logger.info(f"📊 API returned {len(sessions_data) if isinstance(sessions_data, list) else 'non-list'} sessions")
+            logger.info(f"📊 Sessions data type: {type(sessions_data)}")
+            
+            # Log first session to see structure
+            if isinstance(sessions_data, list) and len(sessions_data) > 0:
+                first_session = sessions_data[0]
+                logger.info(f"📊 First session keys: {list(first_session.keys())}")
+                logger.info(f"📊 First session IDs - id: {first_session.get('id')}, org_player_id: {first_session.get('org_player_id')}, player_id: {first_session.get('player_id')}, reboot_player_id: {first_session.get('reboot_player_id')}")
+            
             if not isinstance(sessions_data, list):
-                logger.error("Expected list of sessions")
+                logger.error(f"Expected list of sessions, got: {sessions_data}")
                 return 0
             
             synced_count = 0
+            skipped_no_player = 0
+            skipped_exists = 0
             
             for session_data in sessions_data:
                 session_id = session_data.get('id')
                 if not session_id:
                     continue
                 
-                # Find player by org_player_id
+                # Try to find player by multiple ID fields
                 org_player_id = session_data.get('org_player_id')
-                player = db.query(Player).filter(Player.org_player_id == org_player_id).first()
+                reboot_player_id = session_data.get('player_id') or session_data.get('reboot_player_id')
+                
+                # Try org_player_id first
+                player = db.query(Player).filter(Player.org_player_id == org_player_id).first() if org_player_id else None
+                
+                # If not found, try reboot_player_id
+                if not player and reboot_player_id:
+                    player = db.query(Player).filter(Player.reboot_player_id == reboot_player_id).first()
                 
                 if not player:
-                    logger.warning(f"Player not found for session {session_id}, skipping")
+                    logger.warning(f"⚠️ Player not found for session {session_id} (org_player_id: {org_player_id}, reboot_player_id: {reboot_player_id})")
+                    skipped_no_player += 1
                     continue
                 
                 # Check if session exists
                 existing_session = db.query(SessionModel).filter(SessionModel.session_id == session_id).first()
                 
-                if not existing_session:
-                    # Create new session
-                    new_session = SessionModel(
-                        session_id=session_id,
-                        player_id=player.id,
-                        session_date=datetime.fromisoformat(session_data['session_date'].replace('Z', '+00:00')) if session_data.get('session_date') else None,
-                        movement_type_id=session_data.get('movement_type_id'),
-                        movement_type_name=session_data.get('movement_type_name'),
-                        data_synced=False
-                    )
-                    db.add(new_session)
-                    synced_count += 1
+                if existing_session:
+                    skipped_exists += 1
+                    continue
+                
+                # Create new session
+                new_session = SessionModel(
+                    session_id=session_id,
+                    player_id=player.id,
+                    session_date=datetime.fromisoformat(session_data['session_date'].replace('Z', '+00:00')) if session_data.get('session_date') else None,
+                    movement_type_id=session_data.get('movement_type_id'),
+                    movement_type_name=session_data.get('movement_type_name'),
+                    data_synced=False
+                )
+                db.add(new_session)
+                synced_count += 1
             
             db.commit()
             logger.info(f"✅ Synced {synced_count} sessions")
+            logger.info(f"📊 Skipped: {skipped_no_player} (no player), {skipped_exists} (already exists)")
             return synced_count
             
         except Exception as e:
