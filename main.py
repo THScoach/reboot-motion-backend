@@ -1,22 +1,32 @@
 """
-FastAPI Backend for Reboot Motion Athlete App
-Main API endpoints for serving data to frontend
+Production FastAPI Backend - Reboot Motion Athlete App
+With PostgreSQL Database Integration
 """
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 from typing import Optional, List
 from datetime import datetime
 import os
+import logging
+
+# Import database and models
+from database import get_db, init_db, check_db_connection
+from models import Player, Session as SessionModel, BiomechanicsData, SyncLog
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="Reboot Motion Athlete API",
-    description="REST API for athlete biomechanics data",
-    version="1.0.0"
+    title="Reboot Motion Athlete API - Production",
+    description="REST API for athlete biomechanics data with PostgreSQL",
+    version="2.0.0"
 )
 
-# CORS middleware - allows frontend to access API
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # In production, specify your Netlify domain
@@ -25,78 +35,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mock data for initial testing (before database is connected)
-MOCK_PLAYERS = [
-    {
-        "id": 1,
-        "first_name": "Connor",
-        "last_name": "Gray",
-        "height_ft": 6.0,
-        "weight_lbs": 160,
-        "dominant_hand_hitting": "LHA",
-        "dominant_hand_throwing": "RHA",
-        "date_of_birth": "2010-11-24"
-    },
-    {
-        "id": 2,
-        "first_name": "John",
-        "last_name": "Smith",
-        "height_ft": 5.11,
-        "weight_lbs": 185,
-        "dominant_hand_hitting": "RHA",
-        "dominant_hand_throwing": "RHA",
-        "date_of_birth": "2009-05-15"
-    },
-    {
-        "id": 3,
-        "first_name": "Mike",
-        "last_name": "Johnson",
-        "height_ft": 6.2,
-        "weight_lbs": 195,
-        "dominant_hand_hitting": "RHA",
-        "dominant_hand_throwing": "RHA",
-        "date_of_birth": "2008-09-20"
-    }
-]
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database on app startup"""
+    logger.info("🚀 Starting Reboot Motion API...")
+    
+    # Check database connection
+    if check_db_connection():
+        logger.info("✅ Database connected")
+        # Create tables if they don't exist
+        try:
+            init_db()
+            logger.info("✅ Database tables ready")
+        except Exception as e:
+            logger.error(f"❌ Error initializing database: {e}")
+    else:
+        logger.error("❌ Database connection failed - API will use limited functionality")
 
-MOCK_SESSIONS = [
-    {
-        "id": 1,
-        "session_id": "527e68db-34e9-4daf-a123",
-        "player_id": 1,
-        "session_date": "2024-12-20T10:30:00",
-        "movement_type_name": "Pitching",
-        "data_synced": True,
-        "player": MOCK_PLAYERS[0]
-    },
-    {
-        "id": 2,
-        "session_id": "627e68db-34e9-4daf-b234",
-        "player_id": 1,
-        "session_date": "2024-12-18T14:15:00",
-        "movement_type_name": "Hitting",
-        "data_synced": True,
-        "player": MOCK_PLAYERS[0]
-    },
-    {
-        "id": 3,
-        "session_id": "727e68db-34e9-4daf-c345",
-        "player_id": 2,
-        "session_date": "2024-12-19T09:00:00",
-        "movement_type_name": "Pitching",
-        "data_synced": False,
-        "player": MOCK_PLAYERS[1]
-    }
-]
 
 # Root endpoint
 @app.get("/")
 def read_root():
     """API information"""
     return {
-        "message": "Reboot Motion Athlete API",
-        "version": "1.0.0",
+        "message": "Reboot Motion Athlete API - Production",
+        "version": "2.0.0",
         "status": "running",
+        "database": "PostgreSQL",
         "endpoints": {
             "health": "/health",
             "players": "/players",
@@ -108,55 +74,76 @@ def read_root():
         }
     }
 
+
 # Health check
 @app.get("/health")
-def health_check():
-    """Health check endpoint"""
+def health_check(db: Session = Depends(get_db)):
+    """Health check with database status"""
+    try:
+        # Test database connection
+        db.execute("SELECT 1")
+        db_status = "connected"
+    except:
+        db_status = "disconnected"
+    
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "database": "connected"  # Will update when real DB is connected
+        "database": db_status
     }
+
 
 # Get all players
 @app.get("/players")
 def get_players(
     skip: int = Query(0, description="Number of records to skip"),
     limit: int = Query(100, description="Maximum number of records to return"),
-    search: Optional[str] = Query(None, description="Search by player name")
+    search: Optional[str] = Query(None, description="Search by player name"),
+    db: Session = Depends(get_db)
 ):
-    """Get list of all players"""
-    players = MOCK_PLAYERS
-    
-    # Search filter
-    if search:
-        search_lower = search.lower()
-        players = [
-            p for p in players 
-            if search_lower in p["first_name"].lower() or search_lower in p["last_name"].lower()
-        ]
-    
-    # Pagination
-    total = len(players)
-    players = players[skip:skip + limit]
-    
-    return {
-        "total": total,
-        "players": players,
-        "page": skip // limit + 1,
-        "limit": limit
-    }
+    """Get list of all players from database"""
+    try:
+        query = db.query(Player)
+        
+        # Search filter
+        if search:
+            search_filter = f"%{search}%"
+            query = query.filter(
+                (Player.first_name.ilike(search_filter)) |
+                (Player.last_name.ilike(search_filter))
+            )
+        
+        # Get total count
+        total = query.count()
+        
+        # Apply pagination
+        players = query.order_by(Player.last_name, Player.first_name)\
+                      .offset(skip)\
+                      .limit(limit)\
+                      .all()
+        
+        return {
+            "total": total,
+            "players": [player.to_dict() for player in players],
+            "page": skip // limit + 1,
+            "limit": limit
+        }
+    except Exception as e:
+        logger.error(f"Error getting players: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # Get specific player
 @app.get("/players/{player_id}")
-def get_player(player_id: int):
+def get_player(player_id: int, db: Session = Depends(get_db)):
     """Get specific player details"""
-    player = next((p for p in MOCK_PLAYERS if p["id"] == player_id), None)
+    player = db.query(Player).filter(Player.id == player_id).first()
     
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
     
-    return player
+    return player.to_dict()
+
 
 # Get player's sessions
 @app.get("/players/{player_id}/sessions")
@@ -164,128 +151,157 @@ def get_player_sessions(
     player_id: int,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    limit: int = Query(50, description="Maximum number of sessions to return")
+    limit: int = Query(50, description="Maximum number of sessions to return"),
+    db: Session = Depends(get_db)
 ):
     """Get all sessions for a specific player"""
-    sessions = [s for s in MOCK_SESSIONS if s["player_id"] == player_id]
+    # Verify player exists
+    player = db.query(Player).filter(Player.id == player_id).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
     
-    if not sessions:
-        return {
-            "sessions": [],
-            "total": 0,
-            "player_id": player_id
-        }
+    # Query sessions
+    query = db.query(SessionModel).filter(SessionModel.player_id == player_id)
+    
+    # Date filters
+    if start_date:
+        query = query.filter(SessionModel.session_date >= start_date)
+    if end_date:
+        query = query.filter(SessionModel.session_date <= end_date)
+    
+    # Get sessions ordered by date
+    sessions = query.order_by(SessionModel.session_date.desc())\
+                   .limit(limit)\
+                   .all()
     
     return {
-        "sessions": sessions[:limit],
+        "sessions": [session.to_dict(include_player=True) for session in sessions],
         "total": len(sessions),
         "player_id": player_id
     }
 
+
 # Get session details
 @app.get("/sessions/{session_id}")
-def get_session(session_id: int):
+def get_session(session_id: int, db: Session = Depends(get_db)):
     """Get specific session details"""
-    session = next((s for s in MOCK_SESSIONS if s["id"] == session_id), None)
+    session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
     
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     
-    return session
+    return session.to_dict(include_player=True)
+
 
 # Get session biomechanics data
 @app.get("/sessions/{session_id}/data")
 def get_session_data(
     session_id: int,
-    limit: int = Query(1000, description="Maximum number of data points to return")
+    limit: int = Query(1000, description="Maximum number of data points to return"),
+    db: Session = Depends(get_db)
 ):
     """Get biomechanics data for a session"""
-    session = next((s for s in MOCK_SESSIONS if s["id"] == session_id), None)
+    session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
     
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     
-    # Generate mock biomechanics data
-    data_points = []
-    for i in range(min(100, limit)):  # Generate 100 sample frames
-        data_points.append({
-            "frame_number": i + 1,
-            "timestamp": f"2024-12-20T10:30:{i:02d}",
-            "joint_angles": {
-                "shoulder": 45.5 + (i * 0.5),
-                "elbow": 90.0 + (i * 0.3),
-                "hip": 120.0 - (i * 0.2),
-                "knee": 150.0 + (i * 0.1)
-            },
-            "joint_positions": {
-                "shoulder_x": 1.2 + (i * 0.01),
-                "shoulder_y": 0.8 + (i * 0.02),
-                "elbow_x": 1.5 + (i * 0.015),
-                "elbow_y": 0.6 + (i * 0.01)
-            },
-            "joint_velocities": {
-                "shoulder": 2.5 + (i * 0.05),
-                "elbow": 3.2 + (i * 0.03),
-                "hip": 1.8 + (i * 0.02)
-            }
-        })
+    # Get biomechanics data
+    data_points = db.query(BiomechanicsData)\
+                   .filter(BiomechanicsData.session_id == session_id)\
+                   .order_by(BiomechanicsData.frame_number)\
+                   .limit(limit)\
+                   .all()
     
     return {
-        "session": session,
-        "data_points": data_points,
+        "session": session.to_dict(include_player=True),
+        "data_points": [dp.to_dict() for dp in data_points],
         "total_points": len(data_points)
     }
 
+
 # Get session metrics
 @app.get("/sessions/{session_id}/metrics")
-def get_session_metrics(session_id: int):
+def get_session_metrics(session_id: int, db: Session = Depends(get_db)):
     """Get aggregated metrics for a session"""
-    session = next((s for s in MOCK_SESSIONS if s["id"] == session_id), None)
+    session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
     
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     
+    # Get biomechanics data count
+    frame_count = db.query(BiomechanicsData)\
+                   .filter(BiomechanicsData.session_id == session_id)\
+                   .count()
+    
+    # Get first and last timestamps
+    data_points = db.query(BiomechanicsData)\
+                   .filter(BiomechanicsData.session_id == session_id)\
+                   .order_by(BiomechanicsData.timestamp)\
+                   .all()
+    
+    start_time = data_points[0].timestamp if data_points else None
+    end_time = data_points[-1].timestamp if data_points else None
+    
     return {
         "session_id": session_id,
-        "total_frames": 100,
-        "start_time": "2024-12-20T10:30:00",
-        "end_time": "2024-12-20T10:35:00",
-        "duration_seconds": 300,
-        "max_velocity": 95.5,
-        "avg_velocity": 87.3,
-        "max_shoulder_angle": 145.2,
-        "avg_shoulder_angle": 98.7
+        "total_frames": frame_count,
+        "start_time": start_time.isoformat() if start_time else None,
+        "end_time": end_time.isoformat() if end_time else None,
+        "movement_type": session.movement_type_name
     }
+
 
 # Get sync status
 @app.get("/sync/status")
-def get_sync_status():
+def get_sync_status(db: Session = Depends(get_db)):
     """Get status of last data sync"""
-    return {
-        "last_sync": "2024-12-20T08:00:00",
-        "status": "success",
-        "records_synced": 150,
-        "next_sync": "2024-12-21T08:00:00"
-    }
+    last_sync = db.query(SyncLog)\
+                 .order_by(SyncLog.started_at.desc())\
+                 .first()
+    
+    if not last_sync:
+        return {
+            "message": "No sync operations recorded yet",
+            "status": "never_synced"
+        }
+    
+    return last_sync.to_dict()
+
 
 # Trigger manual sync
 @app.post("/sync/trigger")
 def trigger_sync():
-    """Trigger manual data sync (placeholder)"""
+    """Trigger manual data sync (placeholder - implement sync_service.py)"""
+    # This will be implemented in sync_service.py
     return {
-        "status": "sync_triggered",
-        "message": "Data sync started in background",
-        "estimated_completion": "2 minutes"
+        "status": "sync_not_implemented",
+        "message": "Sync service needs to be configured. See sync_service.py",
+        "note": "Add your Reboot Motion API key to environment variables and deploy sync service"
     }
 
-# Error handler
-@app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
-    """Global exception handler"""
-    return {
-        "error": str(exc),
-        "message": "An error occurred processing your request"
-    }
+
+# Get database stats
+@app.get("/stats")
+def get_stats(db: Session = Depends(get_db)):
+    """Get database statistics"""
+    try:
+        player_count = db.query(Player).count()
+        session_count = db.query(SessionModel).count()
+        biomech_count = db.query(BiomechanicsData).count()
+        synced_sessions = db.query(SessionModel).filter(SessionModel.data_synced == True).count()
+        
+        return {
+            "total_players": player_count,
+            "total_sessions": session_count,
+            "synced_sessions": synced_sessions,
+            "pending_sessions": session_count - synced_sessions,
+            "biomechanics_records": biomech_count
+        }
+    except Exception as e:
+        logger.error(f"Error getting stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn
