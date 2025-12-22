@@ -109,74 +109,64 @@ class RebootMotionSync:
             raise
     
     def sync_sessions(self, db: Session, days_back=30):
-        """Sync sessions from last N days"""
-        logger.info(f"🔄 Syncing sessions from last {days_back} days...")
+        """Sync sessions for all players"""
+        logger.info(f"🔄 Syncing sessions for all players...")
         
         try:
-            # Get sessions from API
-            sessions_data = self._make_request('/sessions', params={'limit': 100})
+            # Get all players first
+            players = db.query(Player).all()
+            logger.info(f"📊 Found {len(players)} players to sync sessions for")
             
-            logger.info(f"📊 API returned {len(sessions_data) if isinstance(sessions_data, list) else 'non-list'} sessions")
-            logger.info(f"📊 Sessions data type: {type(sessions_data)}")
+            total_sessions_synced = 0
+            total_skipped_no_player = 0
+            total_skipped_exists = 0
             
-            # Log first session to see structure
-            if isinstance(sessions_data, list) and len(sessions_data) > 0:
-                first_session = sessions_data[0]
-                logger.info(f"📊 First session keys: {list(first_session.keys())}")
-                logger.info(f"📊 First session IDs - id: {first_session.get('id')}, org_player_id: {first_session.get('org_player_id')}, player_id: {first_session.get('player_id')}, reboot_player_id: {first_session.get('reboot_player_id')}")
-            
-            if not isinstance(sessions_data, list):
-                logger.error(f"Expected list of sessions, got: {sessions_data}")
-                return 0
-            
-            synced_count = 0
-            skipped_no_player = 0
-            skipped_exists = 0
-            
-            for session_data in sessions_data:
-                session_id = session_data.get('id')
-                if not session_id:
+            # Sync sessions for each player
+            for player in players:
+                if not player.reboot_player_id:
+                    logger.warning(f"⚠️ Player {player.id} has no reboot_player_id, skipping")
                     continue
                 
-                # Try to find player by multiple ID fields
-                org_player_id = session_data.get('org_player_id')
-                reboot_player_id = session_data.get('player_id') or session_data.get('reboot_player_id')
-                
-                # Try org_player_id first
-                player = db.query(Player).filter(Player.org_player_id == org_player_id).first() if org_player_id else None
-                
-                # If not found, try reboot_player_id
-                if not player and reboot_player_id:
-                    player = db.query(Player).filter(Player.reboot_player_id == reboot_player_id).first()
-                
-                if not player:
-                    logger.warning(f"⚠️ Player not found for session {session_id} (org_player_id: {org_player_id}, reboot_player_id: {reboot_player_id})")
-                    skipped_no_player += 1
+                try:
+                    # Get sessions for this specific player
+                    sessions_data = self._make_request(f'/players/{player.reboot_player_id}/sessions', params={'limit': 50})
+                    
+                    if not isinstance(sessions_data, list):
+                        logger.warning(f"⚠️ Expected list of sessions for player {player.id}, got: {type(sessions_data)}")
+                        continue
+                    
+                    for session_data in sessions_data:
+                        session_id = session_data.get('id')
+                        if not session_id:
+                            continue
+                        
+                        # Check if session exists
+                        existing_session = db.query(SessionModel).filter(SessionModel.session_id == session_id).first()
+                        
+                        if existing_session:
+                            total_skipped_exists += 1
+                            continue
+                        
+                        # Create new session (we already know the player!)
+                        new_session = SessionModel(
+                            session_id=session_id,
+                            player_id=player.id,  # Use the player we're iterating over
+                            session_date=datetime.fromisoformat(session_data['session_date'].replace('Z', '+00:00')) if session_data.get('session_date') else None,
+                            movement_type_id=session_data.get('movement_type_id'),
+                            movement_type_name=session_data.get('movement_type_name'),
+                            data_synced=False
+                        )
+                        db.add(new_session)
+                        total_sessions_synced += 1
+                    
+                except Exception as player_error:
+                    logger.warning(f"⚠️ Error syncing sessions for player {player.id}: {player_error}")
                     continue
-                
-                # Check if session exists
-                existing_session = db.query(SessionModel).filter(SessionModel.session_id == session_id).first()
-                
-                if existing_session:
-                    skipped_exists += 1
-                    continue
-                
-                # Create new session
-                new_session = SessionModel(
-                    session_id=session_id,
-                    player_id=player.id,
-                    session_date=datetime.fromisoformat(session_data['session_date'].replace('Z', '+00:00')) if session_data.get('session_date') else None,
-                    movement_type_id=session_data.get('movement_type_id'),
-                    movement_type_name=session_data.get('movement_type_name'),
-                    data_synced=False
-                )
-                db.add(new_session)
-                synced_count += 1
             
             db.commit()
-            logger.info(f"✅ Synced {synced_count} sessions")
-            logger.info(f"📊 Skipped: {skipped_no_player} (no player), {skipped_exists} (already exists)")
-            return synced_count
+            logger.info(f"✅ Synced {total_sessions_synced} sessions across {len(players)} players")
+            logger.info(f"📊 Skipped: {total_skipped_exists} (already exists)")
+            return total_sessions_synced
             
         except Exception as e:
             db.rollback()
