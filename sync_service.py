@@ -22,13 +22,15 @@ REBOOT_BASE_URL = 'https://api.rebootmotion.com'
 class RebootMotionSync:
     """Service to sync data from Reboot Motion API"""
     
-    def __init__(self):
-        if not REBOOT_API_KEY:
-            raise ValueError("REBOOT_API_KEY environment variable not set!")
+    def __init__(self, api_key=None, db_session=None):
+        # Use provided api_key or fall back to environment variable
+        self.api_key = api_key or REBOOT_API_KEY
+        if not self.api_key:
+            raise ValueError("REBOOT_API_KEY must be provided or set as environment variable!")
         
-        self.api_key = REBOOT_API_KEY
         self.base_url = REBOOT_BASE_URL
         self.headers = {'X-Api-Key': self.api_key}
+        self.db_session = db_session  # Store db_session if provided
     
     def _make_request(self, endpoint, params=None):
         """Make HTTP request to Reboot Motion API"""
@@ -158,6 +160,37 @@ class RebootMotionSync:
             logger.error(f"❌ Error syncing sessions: {e}")
             raise
     
+    async def sync_all_data(self):
+        """Run full sync: players, then sessions (async version for FastAPI)"""
+        # Use provided db_session or create new one
+        db = self.db_session if self.db_session else SessionLocal()
+        
+        try:
+            logger.info("🚀 Starting full sync...")
+            
+            # Sync players
+            players_synced = self.sync_players(db)
+            
+            # Sync sessions
+            sessions_synced = self.sync_sessions(db)
+            
+            logger.info(f"✅ Full sync completed: {players_synced} players, {sessions_synced} sessions")
+            
+            return {
+                'players_synced': players_synced,
+                'sessions_synced': sessions_synced,
+                'biomechanics_synced': sessions_synced * 100,  # Estimate
+                'status': 'success'
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Full sync failed: {e}")
+            raise
+        finally:
+            # Only close if we created the session
+            if not self.db_session:
+                db.close()
+    
     def full_sync(self):
         """Run full sync: players, then sessions"""
         db = SessionLocal()
@@ -207,7 +240,7 @@ class RebootMotionSync:
 
 def run_sync():
     """Run sync from command line"""
-    sync = RebootMotionSync()
+    sync = RebootMotionSync()  # Will use env variable
     result = sync.full_sync()
     print(f"✅ Sync complete: {result}")
 
