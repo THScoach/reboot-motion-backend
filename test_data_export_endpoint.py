@@ -26,7 +26,7 @@ def test_data_export():
         "session_id": SESSION_ID,
         "org_player_id": ORG_PLAYER_ID,
         "movement_type_id": 1,  # baseball-hitting
-        "data_type": "momentum-energy",
+        "data_type": "metadata",  # Try metadata
         "data_format": "csv"
     }
     
