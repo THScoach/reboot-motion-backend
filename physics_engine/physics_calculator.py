@@ -18,7 +18,7 @@ import numpy as np
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 from pose_detector import PoseFrame
-from bat_speed_calculator import BatSpeedCalculator
+from bat_speed_calculator_v2 import BatSpeedCalculator  # V2: Simplified, ground truth validated
 
 
 @dataclass

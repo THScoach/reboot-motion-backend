@@ -20,7 +20,7 @@ from anthropometry import AnthropometricModel
 from video_processor import VideoProcessor
 from pose_detector import PoseDetector
 from physics_calculator import PhysicsCalculator
-from event_detection_v2 import EventDetector  # V2: TypeScript-based proven logic
+from event_detection_v3 import EventDetector  # V3: WITH PROPER SWING ISOLATION
 from scoring_engine import ScoringEngine
 
 app = FastAPI(title="Kinetic DNA Blueprint - Demo")
