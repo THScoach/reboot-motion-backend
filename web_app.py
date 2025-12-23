@@ -117,8 +117,11 @@ async def analyze_video(
             raise ValueError("Not enough velocity data. Video may be too short.")
         
         # 5. Detect swing events
-        event_detector = EventDetector()
+        event_detector = EventDetector(debug=True)  # Enable debug mode
         events = event_detector.detect_all_events(angles, velocities)
+        
+        if not events:
+            raise ValueError("Could not detect swing window. Video may not contain a clear swing or have insufficient motion data.")
         
         # 6. Find kinetic sequence
         kinetic_seq = physics_calc.find_kinetic_sequence(velocities)
