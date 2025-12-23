@@ -16,6 +16,9 @@ from database import get_db, init_db, check_db_connection, migrate_db
 from models import Player, Session as SessionModel, BiomechanicsData, SyncLog
 from sync_service import RebootMotionSync
 
+# Import CSV upload routes
+from csv_upload_routes import router as csv_router
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -35,6 +38,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include CSV upload router
+app.include_router(csv_router, tags=["CSV Import"])
 
 # Initialize database on startup
 @app.on_event("startup")
@@ -73,6 +79,8 @@ def read_root():
             "player_sessions": "/players/{id}/sessions",
             "session_data": "/sessions/{id}/data",
             "reboot_data_export": "POST /reboot/data-export?session_id={uuid}",
+            "csv_upload": "POST /upload-reboot-csv (fallback for Reboot API)",
+            "csv_upload_info": "GET /csv-upload-info",
             "sync_status": "/sync/status",
             "docs": "/docs"
         }
