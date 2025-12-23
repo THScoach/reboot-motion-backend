@@ -19,7 +19,7 @@
         }
         
         .container {
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto;
             background: white;
             border-radius: 12px;
@@ -39,6 +39,45 @@
             font-size: 14px;
         }
         
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #666;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: auto;
+        }
+        
+        .tab:hover {
+            color: #667eea;
+            transform: none;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
         .form-group {
             margin-bottom: 20px;
         }
@@ -49,6 +88,12 @@
             color: #333;
             font-weight: 600;
             font-size: 14px;
+        }
+        
+        .help-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
         }
         
         input[type="text"],
@@ -75,7 +120,7 @@
             gap: 15px;
         }
         
-        button {
+        button[type="submit"] {
             width: 100%;
             padding: 14px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -88,11 +133,11 @@
             transition: transform 0.2s;
         }
         
-        button:hover {
+        button[type="submit"]:hover {
             transform: translateY(-2px);
         }
         
-        button:disabled {
+        button[type="submit"]:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
@@ -144,6 +189,43 @@
             font-size: 20px;
         }
         
+        .metric-card {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .metric-card h3 {
+            color: #667eea;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .metric-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
         pre {
             background: #333;
             color: #0f0;
@@ -166,92 +248,156 @@
         .error.active {
             display: block;
         }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #1565c0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>⚾ Kinetic DNA Blueprint</h1>
-        <p class="subtitle">Upload a swing video for biomechanics analysis</p>
+        <p class="subtitle">Analyze swing videos or import Reboot Motion CSV data</p>
         
-        <form id="uploadForm" enctype="multipart/form-data">
-            <div class="form-group">
-                <label for="video">Video File</label>
-                <input type="file" id="video" name="video" accept="video/*" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="name">Athlete Name</label>
-                <input type="text" id="name" name="name" placeholder="e.g., Conor Gray" required>
-            </div>
-            
-            <div class="row">
-                <div class="form-group">
-                    <label for="height">Height (inches)</label>
-                    <input type="number" id="height" name="height_inches" placeholder="e.g., 72" step="0.1" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="weight">Weight (lbs)</label>
-                    <input type="number" id="weight" name="weight_lbs" placeholder="e.g., 160" step="0.1" required>
-                </div>
-            </div>
-            
-            <div class="row">
-                <div class="form-group">
-                    <label for="wingspan">Wingspan (inches)</label>
-                    <input type="number" id="wingspan" name="wingspan_inches" placeholder="Optional" step="0.1">
-                </div>
-                
-                <div class="form-group">
-                    <label for="age">Age</label>
-                    <input type="number" id="age" name="age" value="16" min="10" max="50" required>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="batSide">Bat Side</label>
-                <select id="batSide" name="bat_side" required>
-                    <option value="">Select...</option>
-                    <option value="Left">Left</option>
-                    <option value="Right">Right</option>
-                </select>
-            </div>
-            
-            <button type="submit" id="submitBtn">Analyze Swing</button>
-        </form>
-        
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Processing video and detecting poses...</p>
-            <p style="font-size: 12px; margin-top: 10px;">This may take 30-60 seconds</p>
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('video')">📹 Video Analysis</button>
+            <button class="tab" onclick="switchTab('csv')">📂 CSV Import</button>
         </div>
         
-        <div class="error" id="error"></div>
+        <!-- Video Upload Tab -->
+        <div id="video-tab" class="tab-content active">
+            <form id="videoForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="video">Video File</label>
+                    <input type="file" id="video" name="video" accept="video/*" required>
+                    <div class="help-text">Upload a swing video (.mov, .mp4, .avi)</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="name">Athlete Name</label>
+                    <input type="text" id="name" name="name" placeholder="e.g., Connor Gray" required>
+                </div>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label for="height">Height (inches)</label>
+                        <input type="number" id="height" name="height_inches" placeholder="e.g., 72" step="0.1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="weight">Weight (lbs)</label>
+                        <input type="number" id="weight" name="weight_lbs" placeholder="e.g., 160" step="0.1" required>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" name="age" placeholder="e.g., 16" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bat_side">Bat Side</label>
+                        <select id="bat_side" name="bat_side" required>
+                            <option value="">Select...</option>
+                            <option value="right">Right</option>
+                            <option value="left">Left</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="submit">Analyze Video</button>
+            </form>
+            
+            <div class="loading" id="video-loading">
+                <div class="spinner"></div>
+                <p>Processing video... This may take 30-60 seconds</p>
+            </div>
+            
+            <div class="error" id="video-error"></div>
+            <div class="results" id="video-results"></div>
+        </div>
         
-        <div class="results" id="results">
-            <h2>Analysis Results</h2>
-            <pre id="resultsContent"></pre>
+        <!-- CSV Upload Tab -->
+        <div id="csv-tab" class="tab-content">
+            <div class="info-box">
+                <strong>📂 Import Reboot Motion CSV Data</strong><br>
+                Upload momentum-energy CSV files exported from Reboot Motion to get instant ground truth metrics.
+                This is useful when the API is unavailable or for validation purposes.
+            </div>
+            
+            <form id="csvForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="csv-file">CSV File</label>
+                    <input type="file" id="csv-file" name="file" accept=".csv" required>
+                    <div class="help-text">Upload a momentum-energy.csv file from Reboot Motion</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="csv-athlete">Athlete Name (optional)</label>
+                    <input type="text" id="csv-athlete" name="athlete_name" placeholder="e.g., Connor Gray">
+                    <div class="help-text">CSV doesn't contain athlete name, add it here</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bat-mass">Bat Mass (kg)</label>
+                    <input type="number" id="bat-mass" name="bat_mass_kg" value="0.85" step="0.01" required>
+                    <div class="help-text">33"/30oz bat = 0.85 kg (default)</div>
+                </div>
+                
+                <button type="submit">Import CSV</button>
+            </form>
+            
+            <div class="loading" id="csv-loading">
+                <div class="spinner"></div>
+                <p>Processing CSV file...</p>
+            </div>
+            
+            <div class="error" id="csv-error"></div>
+            <div class="results" id="csv-results"></div>
         </div>
     </div>
     
     <script>
-        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+        // Tab switching
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(tab + '-tab').classList.add('active');
+            
+            // Clear results and errors
+            document.querySelectorAll('.results, .error').forEach(el => el.classList.remove('active'));
+        }
+        
+        // Video form submission
+        document.getElementById('videoForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const form = e.target;
-            const formData = new FormData(form);
-            const submitBtn = document.getElementById('submitBtn');
-            const loading = document.getElementById('loading');
-            const results = document.getElementById('results');
-            const error = document.getElementById('error');
+            const loading = document.getElementById('video-loading');
+            const error = document.getElementById('video-error');
+            const results = document.getElementById('video-results');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
             
             // Reset UI
-            submitBtn.disabled = true;
             loading.classList.add('active');
-            results.classList.remove('active');
             error.classList.remove('active');
+            results.classList.remove('active');
+            submitBtn.disabled = true;
             
             try {
+                const formData = new FormData(e.target);
+                
                 const response = await fetch('/analyze', {
                     method: 'POST',
                     body: formData
@@ -259,21 +405,177 @@
                 
                 const data = await response.json();
                 
-                if (data.status === 'success') {
-                    document.getElementById('resultsContent').textContent = JSON.stringify(data, null, 2);
+                loading.classList.remove('active');
+                
+                if (response.ok) {
+                    displayVideoResults(data);
                     results.classList.add('active');
                 } else {
-                    error.textContent = `Error: ${data.message}`;
+                    error.textContent = data.detail || 'Analysis failed';
                     error.classList.add('active');
                 }
             } catch (err) {
-                error.textContent = `Error: ${err.message}`;
+                loading.classList.remove('active');
+                error.textContent = 'Error: ' + err.message;
                 error.classList.add('active');
             } finally {
                 submitBtn.disabled = false;
-                loading.classList.remove('active');
             }
         });
+        
+        // CSV form submission
+        document.getElementById('csvForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const loading = document.getElementById('csv-loading');
+            const error = document.getElementById('csv-error');
+            const results = document.getElementById('csv-results');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            // Reset UI
+            loading.classList.add('active');
+            error.classList.remove('active');
+            results.classList.remove('active');
+            submitBtn.disabled = true;
+            
+            try {
+                const formData = new FormData(e.target);
+                
+                const response = await fetch('/upload-reboot-csv', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                loading.classList.remove('active');
+                
+                if (response.ok) {
+                    displayCSVResults(data);
+                    results.classList.add('active');
+                } else {
+                    error.textContent = data.detail || 'CSV import failed';
+                    error.classList.add('active');
+                }
+            } catch (err) {
+                loading.classList.remove('active');
+                error.textContent = 'Error: ' + err.message;
+                error.classList.add('active');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+        
+        function displayVideoResults(data) {
+            const results = document.getElementById('video-results');
+            results.innerHTML = `
+                <h2>📊 Analysis Results</h2>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        }
+        
+        function displayCSVResults(data) {
+            const results = document.getElementById('csv-results');
+            const session = data.session_info;
+            const metrics = data.ground_truth_metrics;
+            
+            results.innerHTML = `
+                <h2>📊 Ground Truth Metrics</h2>
+                
+                <div class="metric-card">
+                    <h3>Session Info</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Session ID:</span>
+                        <span class="metric-value">${session.session_id}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Athlete:</span>
+                        <span class="metric-value">${session.athlete_name || 'N/A'}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">FPS:</span>
+                        <span class="metric-value">${session.fps}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Duration:</span>
+                        <span class="metric-value">${session.duration_s}s (${session.num_frames} frames)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Contact:</span>
+                        <span class="metric-value">Frame ${session.contact_frame} (${session.contact_time_s}s)</span>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Bat Speed</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">At Contact:</span>
+                        <span class="metric-value">${metrics.bat_speed.at_contact_mph} mph</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Peak:</span>
+                        <span class="metric-value">${metrics.bat_speed.peak_mph} mph</span>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Energy Distribution (at contact)</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Total:</span>
+                        <span class="metric-value">${metrics.energy_distribution.total_j} J</span>
+                    </div>
+                    ${metrics.energy_distribution.lowerhalf_pct ? `
+                    <div class="metric-row">
+                        <span class="metric-label">Lower Half:</span>
+                        <span class="metric-value">${metrics.energy_distribution.lowerhalf_pct}%</span>
+                    </div>
+                    ` : ''}
+                    ${metrics.energy_distribution.torso_pct ? `
+                    <div class="metric-row">
+                        <span class="metric-label">Torso:</span>
+                        <span class="metric-value">${metrics.energy_distribution.torso_pct}%</span>
+                    </div>
+                    ` : ''}
+                    ${metrics.energy_distribution.arms_pct ? `
+                    <div class="metric-row">
+                        <span class="metric-label">Arms:</span>
+                        <span class="metric-value">${metrics.energy_distribution.arms_pct}%</span>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Kinematic Sequence (ms before contact)</h3>
+                    ${Object.entries(metrics.kinematic_sequence_ms_before_contact).map(([segment, time]) => `
+                        <div class="metric-row">
+                            <span class="metric-label">${segment.charAt(0).toUpperCase() + segment.slice(1)}:</span>
+                            <span class="metric-value">${time} ms</span>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Tempo (estimated)</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Ratio:</span>
+                        <span class="metric-value">${metrics.tempo_estimated.ratio}:1</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Load Duration:</span>
+                        <span class="metric-value">${metrics.tempo_estimated.load_duration_ms} ms</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Swing Duration:</span>
+                        <span class="metric-value">${metrics.tempo_estimated.swing_duration_ms} ms</span>
+                    </div>
+                </div>
+                
+                <details style="margin-top: 20px;">
+                    <summary style="cursor: pointer; font-weight: 600; color: #667eea;">View Full JSON Response</summary>
+                    <pre style="margin-top: 10px;">${JSON.stringify(data, null, 2)}</pre>
+                </details>
+            `;
+        }
     </script>
 </body>
 </html>
