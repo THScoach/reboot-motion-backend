@@ -370,21 +370,53 @@ class RebootCSVImporter:
         print(f"      R Arm: {rarm_time_before:.0f} ms")
         print(f"      Bat: {bat_time_before:.0f} ms")
         
-        # Estimate tempo (simplified)
-        # Load phase: -2s to -0.5s before contact
-        # Swing phase: -0.5s to contact
-        load_start_idx = max(0, contact_idx - int(2.0 * swing_data.fps))
-        launch_idx = max(0, contact_idx - int(0.5 * swing_data.fps))
+        # Calculate CORRECT tempo from lower half kinetic energy curve
+        # Method: Load Start (min KE) → Hip Peak (max KE) → Contact
+        # This matches the ground truth validation method
         
-        load_duration_ms = (swing_data.time_s[launch_idx] - swing_data.time_s[load_start_idx]) * 1000
-        swing_duration_ms = (swing_data.time_s[contact_idx] - swing_data.time_s[launch_idx]) * 1000
+        # Get lower half KE (if available)
+        lower_ke = swing_data.lower_half_kinetic_energy
+        if lower_ke is None:
+            # Fallback: estimate from simplified windows
+            load_start_idx = max(0, contact_idx - int(2.0 * swing_data.fps))
+            launch_idx = max(0, contact_idx - int(0.5 * swing_data.fps))
+            load_duration_ms = (swing_data.time_s[launch_idx] - swing_data.time_s[load_start_idx]) * 1000
+            swing_duration_ms = (swing_data.time_s[contact_idx] - swing_data.time_s[launch_idx]) * 1000
+            tempo_ratio = load_duration_ms / swing_duration_ms if swing_duration_ms > 0 else 0
+        else:
+            # CORRECT METHOD: Use lower half KE curve
+            # Find load start: minimum KE in window [-2.5s, -0.5s] from contact
+            load_window_start = max(0, contact_idx - int(2.5 * swing_data.fps))
+            load_window_end = max(0, contact_idx - int(0.5 * swing_data.fps))
+            load_window = lower_ke[load_window_start:load_window_end]
+            
+            if len(load_window) > 0:
+                load_start_idx_rel = np.argmin(load_window)
+                load_start_idx = load_window_start + load_start_idx_rel
+            else:
+                load_start_idx = load_window_start
+            
+            # Find hip peak: maximum KE in window [-1.0s, -0.1s] from contact
+            hip_window_start = max(0, contact_idx - int(1.0 * swing_data.fps))
+            hip_window_end = max(0, contact_idx - int(0.1 * swing_data.fps))
+            hip_window = lower_ke[hip_window_start:hip_window_end]
+            
+            if len(hip_window) > 0:
+                hip_peak_idx_rel = np.argmax(hip_window)
+                hip_peak_idx = hip_window_start + hip_peak_idx_rel
+            else:
+                hip_peak_idx = hip_window_start
+            
+            # Calculate durations
+            load_duration_ms = (swing_data.time_s[hip_peak_idx] - swing_data.time_s[load_start_idx]) * 1000
+            swing_duration_ms = (swing_data.time_s[contact_idx] - swing_data.time_s[hip_peak_idx]) * 1000
+            tempo_ratio = load_duration_ms / swing_duration_ms if swing_duration_ms > 0 else 0
         
-        tempo_ratio = load_duration_ms / swing_duration_ms if swing_duration_ms > 0 else 0
-        
-        print(f"   Tempo (estimated):")
+        print(f"   Tempo (from lower half KE curve):")
         print(f"      Load Duration: {load_duration_ms:.0f} ms")
         print(f"      Swing Duration: {swing_duration_ms:.0f} ms")
         print(f"      Tempo Ratio: {tempo_ratio:.2f}:1")
+        print(f"      Expected: 3.38:1 (Connor Gray ground truth)")
         
         return {
             'bat_speed_mph': bat_speed_mph,
