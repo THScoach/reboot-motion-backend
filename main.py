@@ -72,7 +72,7 @@ def read_root():
             "player_detail": "/players/{id}",
             "player_sessions": "/players/{id}/sessions",
             "session_data": "/sessions/{id}/data",
-            "reboot_data_export": "/reboot/data-export/{session_id}",
+            "reboot_data_export": "POST /reboot/data-export?session_id={uuid}",
             "sync_status": "/sync/status",
             "docs": "/docs"
         }
@@ -257,13 +257,16 @@ def get_session_metrics(session_id: int, db: Session = Depends(get_db)):
 
 
 # Get Reboot Motion Data Export
-@app.get("/reboot/data-export/{reboot_session_id}")
-def get_reboot_data_export(
-    reboot_session_id: str,
-    movement_type: str = Query("baseball-hitting", description="Movement type (default: baseball-hitting)")
+@app.post("/reboot/data-export")
+def create_reboot_data_export(
+    session_id: str = Query(..., description="Reboot Motion session UUID"),
+    movement_type_id: int = Query(1, description="Movement type ID (1=hitting, 2=pitching)"),
+    org_player_id: str = Query(None, description="Organization player ID (optional)"),
+    data_type: str = Query("momentum-energy", description="Data type (momentum-energy, inverse-kinematics, metadata)"),
+    data_format: str = Query("csv", description="Data format (csv or parquet)")
 ):
     """
-    Fetch raw biomechanics data from Reboot Motion Data Export API
+    Create a Data Export request to Reboot Motion API (POST method)
     
     This pulls the full biomechanics dataset including:
     - Angular velocities (pelvis, torso, arms, bat)
@@ -272,14 +275,18 @@ def get_reboot_data_export(
     - Peak velocities
     - Event timing (first move, foot plant, contact)
     - Kinematic sequence
-    - Momentum data
+    - Momentum data (344 columns for momentum-energy type)
+    - Inverse kinematics (211 columns for inverse-kinematics type)
     
     Args:
-        reboot_session_id: Reboot Motion session UUID (not our database ID)
-        movement_type: Type of movement (default: "baseball-hitting")
+        session_id: Reboot Motion session UUID
+        movement_type_id: 1=baseball-hitting, 2=baseball-pitching (default: 1)
+        org_player_id: Organization's player ID (optional)
+        data_type: Type of data export (default: momentum-energy)
+        data_format: File format for export (default: csv)
     
     Returns:
-        Raw biomechanics data from Reboot Motion
+        Data Export object with download_urls to fetch the biomechanics data
     """
     try:
         # Check OAuth credentials
@@ -299,32 +306,45 @@ def get_reboot_data_export(
         sync = RebootMotionSync(username=username, password=password)
         token = sync._get_access_token()
         
-        # Call Reboot Motion Data Export API
+        # Build request payload (all fields are required according to docs)
+        payload = {
+            "session_id": session_id,
+            "movement_type_id": movement_type_id,
+            "data_type": data_type,
+            "data_format": data_format
+        }
+        
+        # Add org_player_id if provided
+        if org_player_id:
+            payload["org_player_id"] = org_player_id
+        
+        # Call Reboot Motion Data Export API (POST method)
         endpoint = "https://api.rebootmotion.com/data_export"
         headers = {
             'Authorization': f'Bearer {token}',
             'Content-Type': 'application/json'
         }
-        params = {
-            'session_id': reboot_session_id,
-            'movement_type': movement_type
-        }
         
-        logger.info(f"📊 Fetching Data Export for session {reboot_session_id}")
+        logger.info(f"📊 Creating Data Export for session {session_id}")
+        logger.info(f"   Payload: {payload}")
         
-        response = requests.get(endpoint, headers=headers, params=params, timeout=30)
+        response = requests.post(endpoint, headers=headers, json=payload, timeout=60)
         
         if response.status_code == 200:
             data = response.json()
-            logger.info(f"✅ Data Export retrieved successfully")
+            logger.info(f"✅ Data Export created successfully")
+            logger.info(f"   Download URLs available: {len(data.get('download_urls', []))}")
             return {
                 "status": "success",
-                "session_id": reboot_session_id,
-                "movement_type": movement_type,
-                "data": data
+                "session_id": session_id,
+                "movement_type_id": movement_type_id,
+                "data_type": data_type,
+                "data_format": data_format,
+                "export_data": data
             }
         else:
             logger.error(f"❌ Reboot API error: {response.status_code}")
+            logger.error(f"   Response: {response.text}")
             raise HTTPException(
                 status_code=response.status_code,
                 detail=f"Reboot Motion API error: {response.text}"
@@ -334,7 +354,7 @@ def get_reboot_data_export(
         logger.error(f"❌ Request error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Request error: {str(e)}")
     except Exception as e:
-        logger.error(f"❌ Error fetching Data Export: {str(e)}")
+        logger.error(f"❌ Error creating Data Export: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
