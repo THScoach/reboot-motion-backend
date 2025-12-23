@@ -23,7 +23,13 @@ from physics_calculator import PhysicsCalculator
 from event_detection_v3 import EventDetector  # V3: WITH PROPER SWING ISOLATION
 from scoring_engine import ScoringEngine
 
+# Import CSV upload router
+from csv_upload_routes import router as csv_router
+
 app = FastAPI(title="Kinetic DNA Blueprint - Demo")
+
+# Include CSV upload router
+app.include_router(csv_router, tags=["CSV Import"])
 
 # Create directories
 UPLOAD_DIR = Path("/home/user/webapp/uploads")

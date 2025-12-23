@@ -176,42 +176,6 @@ async def process_ik_file(temp_path: str, athlete_name: Optional[str]) -> JSONRe
     }
     
     return JSONResponse(content=response)
-                "contact_frame": swing_data.contact_frame,
-                "contact_time_s": round(swing_data.contact_time_s, 3)
-            },
-            "ground_truth_metrics": {
-                "bat_speed": {
-                    "at_contact_mph": round(metrics['bat_speed_mph'], 1),
-                    "peak_mph": round(metrics['peak_bat_speed_mph'], 1)
-                },
-                "energy_distribution": {
-                    "total_j": round(metrics['total_energy_j'], 0),
-                    "lowerhalf_pct": round(metrics['lowerhalf_pct'], 1) if metrics['lowerhalf_pct'] else None,
-                    "torso_pct": round(metrics['torso_pct'], 1) if metrics['torso_pct'] else None,
-                    "arms_pct": round(metrics['arms_pct'], 1) if metrics['arms_pct'] else None
-                },
-                "kinematic_sequence_ms_before_contact": {
-                    k: round(v, 0) for k, v in metrics['kinematic_sequence_ms_before_contact'].items()
-                },
-                "tempo_estimated": {
-                    "ratio": round(metrics['tempo_ratio_estimated'], 2),
-                    "load_duration_ms": round(metrics['load_duration_ms_estimated'], 0),
-                    "swing_duration_ms": round(metrics['swing_duration_ms_estimated'], 0)
-                }
-            }
-        }
-        
-        return JSONResponse(content=response)
-        
-    except Exception as e:
-        # Clean up temp file on error
-        if 'temp_path' in locals():
-            Path(temp_path).unlink(missing_ok=True)
-        
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error processing CSV: {str(e)}"
-        )
 
 
 @router.get("/csv-upload-info")
