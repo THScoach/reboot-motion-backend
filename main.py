@@ -72,6 +72,7 @@ def read_root():
             "player_detail": "/players/{id}",
             "player_sessions": "/players/{id}/sessions",
             "session_data": "/sessions/{id}/data",
+            "reboot_data_export": "/reboot/data-export/{session_id}",
             "sync_status": "/sync/status",
             "docs": "/docs"
         }
@@ -253,6 +254,88 @@ def get_session_metrics(session_id: int, db: Session = Depends(get_db)):
         "end_time": end_time.isoformat() if end_time else None,
         "movement_type": session.movement_type_name
     }
+
+
+# Get Reboot Motion Data Export
+@app.get("/reboot/data-export/{reboot_session_id}")
+def get_reboot_data_export(
+    reboot_session_id: str,
+    movement_type: str = Query("baseball-hitting", description="Movement type (default: baseball-hitting)")
+):
+    """
+    Fetch raw biomechanics data from Reboot Motion Data Export API
+    
+    This pulls the full biomechanics dataset including:
+    - Angular velocities (pelvis, torso, arms, bat)
+    - Linear velocities
+    - Joint angles
+    - Peak velocities
+    - Event timing (first move, foot plant, contact)
+    - Kinematic sequence
+    - Momentum data
+    
+    Args:
+        reboot_session_id: Reboot Motion session UUID (not our database ID)
+        movement_type: Type of movement (default: "baseball-hitting")
+    
+    Returns:
+        Raw biomechanics data from Reboot Motion
+    """
+    try:
+        # Check OAuth credentials
+        username = os.environ.get("REBOOT_USERNAME")
+        password = os.environ.get("REBOOT_PASSWORD")
+        
+        if not username or not password:
+            raise HTTPException(
+                status_code=500,
+                detail="REBOOT_USERNAME and REBOOT_PASSWORD not configured"
+            )
+        
+        # Initialize sync service to get OAuth token
+        import requests
+        from sync_service import RebootMotionSync
+        
+        sync = RebootMotionSync(username=username, password=password)
+        token = sync._get_access_token()
+        
+        # Call Reboot Motion Data Export API
+        endpoint = "https://api.rebootmotion.com/data_export"
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json'
+        }
+        params = {
+            'session_id': reboot_session_id,
+            'movement_type': movement_type
+        }
+        
+        logger.info(f"📊 Fetching Data Export for session {reboot_session_id}")
+        
+        response = requests.get(endpoint, headers=headers, params=params, timeout=30)
+        
+        if response.status_code == 200:
+            data = response.json()
+            logger.info(f"✅ Data Export retrieved successfully")
+            return {
+                "status": "success",
+                "session_id": reboot_session_id,
+                "movement_type": movement_type,
+                "data": data
+            }
+        else:
+            logger.error(f"❌ Reboot API error: {response.status_code}")
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"Reboot Motion API error: {response.text}"
+            )
+            
+    except requests.RequestException as e:
+        logger.error(f"❌ Request error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Request error: {str(e)}")
+    except Exception as e:
+        logger.error(f"❌ Error fetching Data Export: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # Get sync status
