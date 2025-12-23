@@ -213,6 +213,49 @@ class AnthropometricModel:
         """Get properties for a specific segment"""
         return self.segments.get(segment_name, {})
     
+    def get_summary(self) -> Dict:
+        """
+        Get anthropometric summary as dictionary for API responses
+        
+        Returns:
+            Dictionary with all anthropometric data
+        """
+        summary = {
+            "athlete_info": {
+                "height_cm": round(self.height_cm, 1),
+                "height_inches": round(self.height_cm / 2.54, 1),
+                "weight_kg": round(self.weight_kg, 1),
+                "weight_lbs": round(self.weight_kg * 2.20462, 1),
+                "age": self.age
+            },
+            "segment_masses_kg": {
+                segment: round(props['mass'], 2) 
+                for segment, props in self.segments.items()
+            },
+            "segment_lengths_cm": {
+                segment: round(props['length'] * 100, 1) 
+                for segment, props in self.segments.items()
+            },
+            "segment_inertias_kg_m2": {
+                segment: round(props['inertia'], 4) 
+                for segment, props in self.segments.items()
+            },
+            "key_measurements": {
+                "arm_length_cm": round(self.get_arm_length() * 100, 1),
+                "torso_length_cm": round(self.get_torso_length() * 100, 1),
+                "leg_length_cm": round(self.get_leg_length() * 100, 1),
+                "pelvis_inertia_kg_m2": round(self.get_pelvis_inertia(), 4),
+                "torso_inertia_kg_m2": round(self.get_torso_inertia(), 4),
+                "bat_inertia_kg_m2": round(self.get_bat_inertia(), 4)
+            }
+        }
+        
+        if self.wingspan_cm:
+            summary["athlete_info"]["wingspan_cm"] = round(self.wingspan_cm, 1)
+            summary["athlete_info"]["wingspan_inches"] = round(self.wingspan_cm / 2.54, 1)
+        
+        return summary
+    
     def print_summary(self):
         """Print anthropometric summary for debugging"""
         print(f"\n{'='*60}")
