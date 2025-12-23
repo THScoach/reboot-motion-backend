@@ -7,12 +7,18 @@ Key Calculations:
 2. Linear velocities (hands, bat barrel)
 3. Kinetic chain sequencing (ground → pelvis → torso → arms → bat)
 4. Energy transfer efficiency
+
+CRITICAL FIX: Bat speed now uses proper lever arm physics
+- Old: bat_velocity = hand_velocity * 1.5 (gave 21.6 mph for pros)
+- New: bat_velocity = hand_velocity + (angular_velocity * effective_radius)
+- Expected: 70-85 mph for elite pros
 """
 
 import numpy as np
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 from pose_detector import PoseFrame
+from bat_speed_calculator import BatSpeedCalculator
 
 
 @dataclass
@@ -95,7 +101,7 @@ class PhysicsCalculator:
     
     def __init__(self):
         """Initialize physics calculator"""
-        pass
+        self.bat_speed_calc = BatSpeedCalculator()
     
     def calculate_angle_2d(self, point1: Tuple[float, float], 
                           point2: Tuple[float, float], 
@@ -346,8 +352,13 @@ class PhysicsCalculator:
             else:
                 hand_vel = 0.0
             
-            # Bat velocity (estimated as 1.5x hand velocity)
-            bat_vel = hand_vel * 1.5
+            # Bat velocity (using proper lever arm physics)
+            # v_bat = v_hand + (ω_shoulder * r_effective)
+            # where r_effective ≈ 2m (shoulder to barrel distance)
+            bat_vel = self.bat_speed_calc.calculate_bat_velocity_simple(
+                hand_vel, 
+                shoulder_vel
+            )
             
             velocities.append(JointVelocities(
                 frame_number=curr.frame_number,
