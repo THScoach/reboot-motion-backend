@@ -19,6 +19,9 @@ from sync_service import RebootMotionSync
 # Import CSV upload routes
 from csv_upload_routes import router as csv_router
 
+# Import Priority 12 enhancement
+from priority_12_api_enhancement import enhance_analysis_with_priority_10_11
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -78,6 +81,7 @@ def read_root():
             "player_detail": "/players/{id}",
             "player_sessions": "/players/{id}/sessions",
             "session_data": "/sessions/{id}/data",
+            "enhanced_analysis": "POST /analyze/enhanced (Priority 9+10+11)",
             "reboot_data_export": "POST /reboot/data-export?session_id={uuid}",
             "csv_upload": "POST /upload-reboot-csv (fallback for Reboot API)",
             "csv_upload_info": "GET /csv-upload-info",
@@ -477,6 +481,75 @@ def get_stats(db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error getting stats: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ========================================
+# PRIORITY 12: ENHANCED ANALYSIS API
+# ========================================
+from pydantic import BaseModel
+
+class EnhancedAnalysisRequest(BaseModel):
+    """Request model for enhanced analysis with Priority 10 + 11"""
+    # Scores
+    ground_score: int
+    engine_score: int
+    weapon_score: int
+    
+    # Athlete data
+    height_inches: float
+    wingspan_inches: Optional[float] = None
+    weight_lbs: float
+    age: int
+    bat_weight_oz: int = 30
+    
+    # Optional actual data
+    actual_bat_speed_mph: Optional[float] = None
+    rotation_ke_joules: Optional[float] = None
+    translation_ke_joules: Optional[float] = None
+
+
+@app.post("/analyze/enhanced")
+def enhanced_analysis(request: EnhancedAnalysisRequest):
+    """
+    Enhanced analysis with Priority 9 + 10 + 11
+    
+    This endpoint combines:
+    - Priority 9: Kinetic Capacity Framework
+    - Priority 10: Swing Rehab Recommendation Engine
+    - Priority 11: BioSwing Motor-Preference System
+    
+    Returns comprehensive analysis including:
+    - Motor preference detection (SPINNER/GLIDER/LAUNCHER)
+    - Adjusted scores (motor-aware scoring)
+    - Kinetic capacity (bat speed potential)
+    - Gap analysis (actual vs potential)
+    - Energy leak identification
+    - Personalized correction plan (drills, strength work, timeline)
+    """
+    try:
+        result = enhance_analysis_with_priority_10_11(
+            ground_score=request.ground_score,
+            engine_score=request.engine_score,
+            weapon_score=request.weapon_score,
+            height_inches=request.height_inches,
+            wingspan_inches=request.wingspan_inches,
+            weight_lbs=request.weight_lbs,
+            age=request.age,
+            bat_weight_oz=request.bat_weight_oz,
+            actual_bat_speed_mph=request.actual_bat_speed_mph,
+            rotation_ke_joules=request.rotation_ke_joules,
+            translation_ke_joules=request.translation_ke_joules
+        )
+        
+        return {
+            "status": "success",
+            "data": result
+        }
+    except Exception as e:
+        logger.error(f"Error in enhanced analysis: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Analysis error: {str(e)}")
 
 
 if __name__ == "__main__":
