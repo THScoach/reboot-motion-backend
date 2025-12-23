@@ -12,7 +12,7 @@ Plus: Transfer Ratio (efficiency of energy transfer)
 """
 
 import numpy as np
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from dataclasses import dataclass
 from event_detection import SwingEvents
 from physics_calculator import KineticSequence, JointVelocities
@@ -93,7 +93,7 @@ class ScoringEngine:
         return events.get_tempo_ratio()
     
     def calculate_ground_score(self, velocities: List[JointVelocities],
-                               events: SwingEvents) -> tuple[int, float]:
+                               events: SwingEvents) -> tuple:
         """
         Calculate Ground Score (Body metric)
         Measures lower body power generation
@@ -133,7 +133,7 @@ class ScoringEngine:
         return min(100, max(0, score)), peak_pelvis
     
     def calculate_engine_score(self, velocities: List[JointVelocities],
-                               events: SwingEvents) -> tuple[int, float]:
+                               events: SwingEvents) -> tuple:
         """
         Calculate Engine Score (Bat metric - torso rotation)
         Measures torso power generation
@@ -172,7 +172,7 @@ class ScoringEngine:
         return min(100, max(0, score)), peak_torso
     
     def calculate_weapon_score(self, velocities: List[JointVelocities],
-                               events: SwingEvents) -> tuple[int, float]:
+                               events: SwingEvents) -> tuple:
         """
         Calculate Weapon Score (Ball metric - bat speed)
         Measures bat speed through contact zone
