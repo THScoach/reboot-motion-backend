@@ -136,7 +136,13 @@ async def analyze_video(
         scoring_engine = ScoringEngine()
         scores = scoring_engine.calculate_all_scores(velocities, events, kinetic_seq, weight_lbs)
         
-        # 8. Build response
+        # 8. Calculate bat speed potential
+        potential = anthro.estimate_bat_speed_potential(
+            bat_length_inches=33,  # Default, could be input later
+            bat_weight_oz=30
+        )
+        
+        # 9. Build response
         response = {
             "status": "success",
             "athlete": {
@@ -169,6 +175,12 @@ async def analyze_video(
                 "sequence_quality_score": round(kinetic_seq.get_sequence_quality(), 0)
             },
             "scores": scores.to_dict(),
+            "potential": {
+                "bat_speed_mph": potential['bat_speed_mph'],
+                "exit_velocity_tee_mph": potential['exit_velocity_tee_mph'],
+                "exit_velocity_pitched_mph": potential['exit_velocity_pitched_mph'],
+                "factors": potential['factors']
+            },
             "interpretation": {
                 "tempo_ratio": get_tempo_interpretation(scores.tempo_ratio),
                 "ground_score": get_score_interpretation(scores.ground_score),
