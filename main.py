@@ -351,11 +351,17 @@ def create_reboot_data_export(
             )
             
     except requests.RequestException as e:
-        logger.error(f"❌ Request error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Request error: {str(e)}")
+        import traceback
+        error_msg = f"Request error: {str(e)}" if str(e) else f"Request error: {type(e).__name__}"
+        logger.error(f"❌ {error_msg}")
+        logger.error(f"   Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=error_msg)
     except Exception as e:
-        logger.error(f"❌ Error creating Data Export: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        error_msg = f"Error creating Data Export: {str(e)}" if str(e) else f"Error: {type(e).__name__} with empty message"
+        logger.error(f"❌ {error_msg}")
+        logger.error(f"   Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=error_msg)
 
 
 # Get sync status
