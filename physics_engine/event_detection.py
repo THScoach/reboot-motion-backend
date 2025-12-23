@@ -92,8 +92,18 @@ class EventDetector:
         Returns:
             SwingWindow or None if no valid swing found
         """
+        print(f"\n🔍 SWING WINDOW DETECTION (debug mode)")
+        print(f"   Total velocities: {len(velocities) if velocities else 0}")
+        
         if not velocities or len(velocities) < 20:
+            print(f"   ❌ Not enough velocities (need at least 20)")
             return None
+        
+        # Get time range
+        if velocities:
+            first_time = velocities[0].timestamp_ms
+            last_time = velocities[-1].timestamp_ms
+            print(f"   Time range: {first_time:.0f}ms to {last_time:.0f}ms ({(last_time-first_time)/1000:.2f}s)")
         
         # Calculate combined velocity metric (bat + hand velocities)
         combined_vels = []
@@ -107,14 +117,21 @@ class EventDetector:
             combined_vels.append(vel)
         
         if not combined_vels:
+            print(f"   ❌ No valid velocities found")
             return None
+        
+        # Statistics
+        mean_vel = np.mean(combined_vels)
+        max_vel = np.max(combined_vels)
+        min_vel = np.min(combined_vels)
+        print(f"   Velocity stats: min={min_vel:.2f} m/s, max={max_vel:.2f} m/s, mean={mean_vel:.2f} m/s")
         
         # Find peak velocity (likely contact point)
         peak_idx = np.argmax(combined_vels)
+        peak_velocity = combined_vels[peak_idx]
         peak_velocity_ms = velocities[peak_idx].timestamp_ms
         
-        if self.debug:
-            print(f"  Peak velocity at index {peak_idx}, time {peak_velocity_ms}ms")
+        print(f"   ✓ Peak velocity: {peak_velocity:.2f} m/s at index {peak_idx}, time {peak_velocity_ms:.0f}ms ({peak_velocity_ms/1000:.2f}s)")
         
         # Look backward for swing start (load phase begins)
         # Typically 300-600ms before contact
@@ -122,12 +139,15 @@ class EventDetector:
         
         # Find where velocity was low (stance/early load)
         velocity_threshold = np.mean(combined_vels) * 0.3  # 30% of mean
+        print(f"   Velocity threshold: {velocity_threshold:.2f} m/s (30% of mean)")
         
         start_idx = peak_idx
         for i in range(peak_idx - 1, search_start_idx, -1):
             if combined_vels[i] < velocity_threshold:
                 start_idx = i
                 break
+        
+        print(f"   Window start: index {start_idx}, time {velocities[start_idx].timestamp_ms:.0f}ms")
         
         # Look forward for follow-through end
         # Typically 200-400ms after contact
@@ -143,6 +163,8 @@ class EventDetector:
             # Didn't find low velocity, use search end
             end_idx = search_end_idx
         
+        print(f"   Window end: index {end_idx}, time {velocities[end_idx].timestamp_ms:.0f}ms")
+        
         # Create swing window
         window = SwingWindow(
             start_ms=velocities[start_idx].timestamp_ms,
@@ -153,15 +175,14 @@ class EventDetector:
         # Validate window duration
         duration = window.duration_ms()
         
-        if self.debug:
-            print(f"  Window: {window.start_ms:.0f}ms to {window.end_ms:.0f}ms")
-            print(f"  Duration: {duration:.0f}ms")
+        print(f"   Window duration: {duration:.0f}ms")
+        print(f"   Validation: min={min_duration_ms}ms, max={max_duration_ms}ms")
         
         if duration < min_duration_ms or duration > max_duration_ms:
-            if self.debug:
-                print(f"  ❌ Invalid duration: {duration:.0f}ms")
+            print(f"   ❌ Invalid duration: {duration:.0f}ms (outside range {min_duration_ms}-{max_duration_ms}ms)")
             return None
         
+        print(f"   ✓ Valid swing window detected!")
         return window
     
     def detect_stance(self, angles: List[JointAngles],
