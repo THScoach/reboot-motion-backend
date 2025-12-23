@@ -84,11 +84,15 @@ async def analyze_video(
             
             # Process every frame (for demo, limit to reasonable number)
             if frame_count < 500:  # ~16 seconds at 30fps
-                result = pose_detector.process_frame(frame)
-                if result and result.pose_landmarks:
+                timestamp_ms = video_proc.frame_number_to_time_ms(frame_count)
+                pose_frame = pose_detector.process_frame(frame, frame_count, timestamp_ms)
+                
+                if pose_frame.is_valid:
+                    # Convert landmarks dict to list format
                     landmarks = []
-                    for landmark in result.pose_landmarks.landmark:
+                    for joint_name, landmark in pose_frame.landmarks.items():
                         landmarks.append({
+                            'joint': joint_name,
                             'x': landmark.x,
                             'y': landmark.y,
                             'z': landmark.z,
@@ -96,7 +100,7 @@ async def analyze_video(
                         })
                     poses.append({
                         'frame': frame_count,
-                        'timestamp_ms': video_proc.frame_number_to_time_ms(frame_count),
+                        'timestamp_ms': timestamp_ms,
                         'landmarks': landmarks
                     })
             
