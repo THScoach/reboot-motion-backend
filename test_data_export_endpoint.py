@@ -10,6 +10,7 @@ import sys
 # Test endpoint
 BASE_URL = "https://reboot-motion-backend-production.up.railway.app"
 SESSION_ID = "6764e74b-516d-45eb-a8a9-c50a069ef50d"
+ORG_PLAYER_ID = "189d353f-4730-45cc-9de6-53fbb71e872f"  # Ronald Acuna
 
 def test_data_export():
     """Test the POST /reboot/data-export endpoint"""
@@ -23,6 +24,7 @@ def test_data_export():
     url = f"{BASE_URL}/reboot/data-export"
     params = {
         "session_id": SESSION_ID,
+        "org_player_id": ORG_PLAYER_ID,
         "movement_type_id": 1,  # baseball-hitting
         "data_type": "momentum-energy",
         "data_format": "csv"

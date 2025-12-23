@@ -260,8 +260,8 @@ def get_session_metrics(session_id: int, db: Session = Depends(get_db)):
 @app.post("/reboot/data-export")
 def create_reboot_data_export(
     session_id: str = Query(..., description="Reboot Motion session UUID"),
+    org_player_id: str = Query(..., description="Organization player ID (required)"),
     movement_type_id: int = Query(1, description="Movement type ID (1=hitting, 2=pitching)"),
-    org_player_id: str = Query(None, description="Organization player ID (optional)"),
     data_type: str = Query("momentum-energy", description="Data type (momentum-energy, inverse-kinematics, metadata)"),
     data_format: str = Query("csv", description="Data format (csv or parquet)")
 ):
@@ -309,14 +309,11 @@ def create_reboot_data_export(
         # Build request payload (all fields are required according to docs)
         payload = {
             "session_id": session_id,
+            "org_player_id": org_player_id,
             "movement_type_id": movement_type_id,
             "data_type": data_type,
             "data_format": data_format
         }
-        
-        # Add org_player_id if provided
-        if org_player_id:
-            payload["org_player_id"] = org_player_id
         
         # Call Reboot Motion Data Export API (POST method)
         endpoint = "https://api.rebootmotion.com/data_export"
