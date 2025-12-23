@@ -10,9 +10,35 @@ import tempfile
 from pathlib import Path
 from reboot_csv_importer import RebootCSVImporter, RebootSwingData
 from inverse_kinematics_importer import InverseKinematicsImporter, RebootIKData
-from typing import Optional
+from typing import Optional, Any, Dict
+import numpy as np
 
 router = APIRouter()
+
+
+def convert_to_native_types(obj: Any) -> Any:
+    """
+    Convert NumPy/Pandas types to native Python types for JSON serialization.
+    
+    Handles:
+    - numpy.int64 → int
+    - numpy.float64 → float
+    - numpy.ndarray → list
+    - dict → recursively convert values
+    - None → None
+    """
+    if isinstance(obj, (np.integer, np.int64)):
+        return int(obj)
+    elif isinstance(obj, (np.floating, np.float64)):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {k: convert_to_native_types(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [convert_to_native_types(item) for item in obj]
+    else:
+        return obj
 
 
 @router.post("/upload-reboot-csv")
@@ -95,7 +121,7 @@ async def process_momentum_file(temp_path: str, bat_mass_kg: float, athlete_name
     # Clean up temp file
     Path(temp_path).unlink()
     
-    # Prepare response
+    # Prepare response (convert NumPy types to native Python types)
     response = {
         "success": True,
         "data_type": "momentum-energy",
@@ -104,33 +130,36 @@ async def process_momentum_file(temp_path: str, bat_mass_kg: float, athlete_name
             "session_id": swing_data.session_id,
             "athlete_name": swing_data.athlete_name,
             "movement_type": swing_data.movement_type,
-            "fps": round(swing_data.fps, 1),
-            "duration_s": round(swing_data.duration_s, 2),
-            "num_frames": swing_data.num_frames,
-            "contact_frame": swing_data.contact_frame,
-            "contact_time_s": round(swing_data.contact_time_s, 3)
+            "fps": float(round(swing_data.fps, 1)),
+            "duration_s": float(round(swing_data.duration_s, 2)),
+            "num_frames": int(swing_data.num_frames),
+            "contact_frame": int(swing_data.contact_frame),
+            "contact_time_s": float(round(swing_data.contact_time_s, 3))
         },
         "ground_truth_metrics": {
             "bat_speed": {
-                "at_contact_mph": round(metrics['bat_speed_mph'], 1),
-                "peak_mph": round(metrics['peak_bat_speed_mph'], 1)
+                "at_contact_mph": float(round(metrics['bat_speed_mph'], 1)),
+                "peak_mph": float(round(metrics['peak_bat_speed_mph'], 1))
             },
             "energy_distribution": {
-                "total_j": round(metrics['total_energy_j'], 0),
-                "lowerhalf_pct": round(metrics['lowerhalf_pct'], 1) if metrics['lowerhalf_pct'] else None,
-                "torso_pct": round(metrics['torso_pct'], 1) if metrics['torso_pct'] else None,
-                "arms_pct": round(metrics['arms_pct'], 1) if metrics['arms_pct'] else None
+                "total_j": float(round(metrics['total_energy_j'], 0)),
+                "lowerhalf_pct": float(round(metrics['lowerhalf_pct'], 1)) if metrics['lowerhalf_pct'] else None,
+                "torso_pct": float(round(metrics['torso_pct'], 1)) if metrics['torso_pct'] else None,
+                "arms_pct": float(round(metrics['arms_pct'], 1)) if metrics['arms_pct'] else None
             },
             "kinematic_sequence_ms_before_contact": {
-                k: round(v, 0) for k, v in metrics['kinematic_sequence_ms_before_contact'].items()
+                k: float(round(v, 0)) for k, v in metrics['kinematic_sequence_ms_before_contact'].items()
             },
             "tempo_estimated": {
-                "ratio": round(metrics['tempo_ratio_estimated'], 2),
-                "load_duration_ms": round(metrics['load_duration_ms_estimated'], 0),
-                "swing_duration_ms": round(metrics['swing_duration_ms_estimated'], 0)
+                "ratio": float(round(metrics['tempo_ratio_estimated'], 2)),
+                "load_duration_ms": float(round(metrics['load_duration_ms_estimated'], 0)),
+                "swing_duration_ms": float(round(metrics['swing_duration_ms_estimated'], 0))
             }
         }
     }
+    
+    # Convert any remaining NumPy types
+    response = convert_to_native_types(response)
     
     return JSONResponse(content=response)
 
@@ -151,7 +180,7 @@ async def process_ik_file(temp_path: str, athlete_name: Optional[str]) -> JSONRe
     # Clean up temp file
     Path(temp_path).unlink()
     
-    # Prepare response
+    # Prepare response (convert NumPy types to native Python types)
     response = {
         "success": True,
         "data_type": "inverse-kinematics",
@@ -160,20 +189,23 @@ async def process_ik_file(temp_path: str, athlete_name: Optional[str]) -> JSONRe
             "session_id": ik_data.session_id,
             "athlete_name": ik_data.athlete_name,
             "movement_type": ik_data.movement_type,
-            "fps": round(ik_data.fps, 1),
-            "duration_s": round(ik_data.duration_s, 2),
-            "num_frames": ik_data.num_frames,
-            "contact_frame": ik_data.contact_frame,
-            "contact_time_s": round(ik_data.contact_time_s, 3)
+            "fps": float(round(ik_data.fps, 1)),
+            "duration_s": float(round(ik_data.duration_s, 2)),
+            "num_frames": int(ik_data.num_frames),
+            "contact_frame": int(ik_data.contact_frame),
+            "contact_time_s": float(round(ik_data.contact_time_s, 3))
         },
         "joint_data": {
-            "num_joint_angles": len(ik_data.joint_angles),
-            "num_joint_positions": len(ik_data.joint_positions),
-            "has_angular_velocities": ik_data.angular_velocities is not None,
-            "has_segment_orientations": ik_data.segment_orientations is not None
+            "num_joint_angles": int(len(ik_data.joint_angles)),
+            "num_joint_positions": int(len(ik_data.joint_positions)),
+            "has_angular_velocities": bool(ik_data.angular_velocities is not None),
+            "has_segment_orientations": bool(ik_data.segment_orientations is not None)
         },
         "ik_metrics": metrics
     }
+    
+    # Convert any remaining NumPy types (especially in metrics dict)
+    response = convert_to_native_types(response)
     
     return JSONResponse(content=response)
 
