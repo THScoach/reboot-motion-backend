@@ -329,15 +329,15 @@
         <div id="csv-tab" class="tab-content">
             <div class="info-box">
                 <strong>📂 Import Reboot Motion CSV Data</strong><br>
-                Upload momentum-energy CSV files exported from Reboot Motion to get instant ground truth metrics.
-                This is useful when the API is unavailable or for validation purposes.
+                Upload <strong>momentum-energy</strong> or <strong>inverse-kinematics</strong> CSV files exported from Reboot Motion to get instant metrics.
+                File type is automatically detected from filename. Useful when the API is unavailable or for validation purposes.
             </div>
             
             <form id="csvForm" enctype="multipart/form-data">
                 <div class="form-group">
                     <label for="csv-file">CSV File</label>
                     <input type="file" id="csv-file" name="file" accept=".csv" required>
-                    <div class="help-text">Upload a momentum-energy.csv file from Reboot Motion</div>
+                    <div class="help-text">Upload momentum-energy.csv or inverse-kinematics.csv from Reboot Motion</div>
                 </div>
                 
                 <div class="form-group">
@@ -476,11 +476,21 @@
         
         function displayCSVResults(data) {
             const results = document.getElementById('csv-results');
+            
+            // Check file type
+            if (data.data_type === 'inverse-kinematics') {
+                displayIKResults(data, results);
+            } else {
+                displayMomentumResults(data, results);
+            }
+        }
+        
+        function displayMomentumResults(data, resultsEl) {
             const session = data.session_info;
             const metrics = data.ground_truth_metrics;
             
-            results.innerHTML = `
-                <h2>📊 Ground Truth Metrics</h2>
+            resultsEl.innerHTML = `
+                <h2>📊 Ground Truth Metrics (Momentum-Energy)</h2>
                 
                 <div class="metric-card">
                     <h3>Session Info</h3>
@@ -575,6 +585,120 @@
                     <pre style="margin-top: 10px;">${JSON.stringify(data, null, 2)}</pre>
                 </details>
             `;
+        }
+        
+        function displayIKResults(data, resultsEl) {
+            const session = data.session_info;
+            const jointData = data.joint_data;
+            const metrics = data.ik_metrics;
+            
+            let html = `
+                <h2>📊 Inverse Kinematics Data</h2>
+                
+                <div class="metric-card">
+                    <h3>Session Info</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Session ID:</span>
+                        <span class="metric-value">${session.session_id}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Athlete:</span>
+                        <span class="metric-value">${session.athlete_name || 'N/A'}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">FPS:</span>
+                        <span class="metric-value">${session.fps}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Duration:</span>
+                        <span class="metric-value">${session.duration_s}s (${session.num_frames} frames)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Contact:</span>
+                        <span class="metric-value">Frame ${session.contact_frame} (${session.contact_time_s}s)</span>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Joint Data Summary</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Joint Angles:</span>
+                        <span class="metric-value">${jointData.num_joint_angles} series</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Joint Positions:</span>
+                        <span class="metric-value">${jointData.num_joint_positions} series</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Angular Velocities:</span>
+                        <span class="metric-value">${jointData.has_angular_velocities ? 'Yes' : 'No'}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Segment Orientations:</span>
+                        <span class="metric-value">${jointData.has_segment_orientations ? 'Yes' : 'No'}</span>
+                    </div>
+                </div>
+            `;
+            
+            // Hip-shoulder separation
+            if (metrics.hip_shoulder_separation) {
+                html += `
+                    <div class="metric-card">
+                        <h3>Hip-Shoulder Separation</h3>
+                        <div class="metric-row">
+                            <span class="metric-label">Maximum:</span>
+                            <span class="metric-value">${metrics.hip_shoulder_separation.max_deg.toFixed(1)}°</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">At Contact:</span>
+                            <span class="metric-value">${metrics.hip_shoulder_separation.at_contact_deg.toFixed(1)}°</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Bat path length
+            if (metrics.bat_path_length_m) {
+                html += `
+                    <div class="metric-card">
+                        <h3>Bat Path</h3>
+                        <div class="metric-row">
+                            <span class="metric-label">Total Path Length:</span>
+                            <span class="metric-value">${metrics.bat_path_length_m.toFixed(2)} m</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Range of motion (show first 5 joints)
+            if (metrics.range_of_motion) {
+                const romEntries = Object.entries(metrics.range_of_motion).slice(0, 5);
+                if (romEntries.length > 0) {
+                    html += `
+                        <div class="metric-card">
+                            <h3>Range of Motion (Sample)</h3>
+                            ${romEntries.map(([joint, data]) => `
+                                <div class="metric-row">
+                                    <span class="metric-label">${joint}:</span>
+                                    <span class="metric-value">${data.range.toFixed(1)}° (${data.min.toFixed(1)}° to ${data.max.toFixed(1)}°)</span>
+                                </div>
+                            `).join('')}
+                            <div style="margin-top: 10px; font-size: 12px; color: #999;">
+                                ${Object.keys(metrics.range_of_motion).length} total joints tracked
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            html += `
+                <details style="margin-top: 20px;">
+                    <summary style="cursor: pointer; font-weight: 600; color: #667eea;">View Full JSON Response</summary>
+                    <pre style="margin-top: 10px;">${JSON.stringify(data, null, 2)}</pre>
+                </details>
+            `;
+            
+            resultsEl.innerHTML = html;
         }
     </script>
 </body>
