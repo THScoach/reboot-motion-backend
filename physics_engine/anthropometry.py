@@ -353,11 +353,21 @@ class AnthropometricModel:
         # Calibrated base speed (mph)
         BASE_SPEED = 75.0  # mph for reference adult (1.75m, 75kg, 0.75m arm, age 25)
         
+        # Height-specific calibration (shorter players generate more relative power)
+        # <5'10" (70"): +5.5% boost
+        # ≥5'10" (70"): +1.5% boost
+        height_inches = self.height_cm / 2.54
+        if height_inches < 70:
+            height_calibration = 1.055  # +5.5% for shorter players
+        else:
+            height_calibration = 1.015  # +1.5% for taller players
+        
         potential_bat_speed_mph = (BASE_SPEED * 
                                    weight_factor * 
                                    arm_factor * 
                                    age_factor * 
-                                   bat_factor)
+                                   bat_factor * 
+                                   height_calibration)
         
         # Calculate potential exit velocity using Dr. Alan Nathan's formula
         # EV = q * v_bat + (1 + q) * v_pitch
@@ -381,6 +391,7 @@ class AnthropometricModel:
                 'arm_factor': round(arm_factor, 3),
                 'age_factor': round(age_factor, 3),
                 'bat_factor': round(bat_factor, 3),
+                'height_calibration': round(height_calibration, 3),
                 'arm_length_m': round(arm_length_m, 3)
             }
         }
