@@ -321,7 +321,7 @@ def create_reboot_data_export(
         # Call Reboot Motion Data Export API (POST method)
         endpoint = "https://api.rebootmotion.com/data_export"
         headers = {
-            'Authentication': f'Bearer {token}',  # NOTE: Reboot uses "Authentication" not "Authorization"
+            'Authorization': f'Bearer {token}',  # Standard Authorization header (not Authentication)
             'Content-Type': 'application/json'
         }
         
