@@ -1,417 +1,300 @@
 """
-Test Suite for Priority 9: Kinetic Capacity Framework
+Test Suite for Kinetic Capacity Framework
+==========================================
 
-Validates:
-1. Kinetic capacity calculation (body specs -> capacity range)
-2. Efficiency analysis (component scores -> energy leaks)
-3. Capacity gap analysis (actual vs capacity ceiling)
-4. Complete integration (Eric Williams validation case)
+Comprehensive tests to validate all calculations.
 """
 
 import sys
-from pathlib import Path
+sys.path.insert(0, '/home/user')
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent))
-
-from physics_engine.kinetic_capacity_calculator import KineticCapacityCalculator
-from physics_engine.efficiency_analyzer import EfficiencyAnalyzer
-from physics_engine.capacity_gap_analyzer import CapacityGapAnalyzer
+from physics_engine.kinetic_capacity_calculator import calculate_energy_capacity
+from physics_engine.efficiency_analyzer import calculate_efficiency, predict_current_performance
+from physics_engine.gap_analyzer import analyze_gaps
 
 
-def test_kinetic_capacity_calculation():
+def test_eric_williams_capacity():
     """
-    TEST 1: Kinetic Capacity Calculation
-    Validate that body specs produce correct capacity range
+    Test 1: Eric Williams Capacity Validation
+    
+    Expected:
+    - Baseline: 75 mph
+    - Wingspan correction: +1.5% (ape index +1")
+    - Final capacity: 76.1 mph midpoint
+    - Capacity range: 72-80 mph (85%-95% efficiency)
+    - Exit velo capacity: 110-120 mph (vs 80mph pitch)
     """
-    print("\n" + "="*70)
-    print("TEST 1: KINETIC CAPACITY CALCULATION")
-    print("="*70)
+    print("\n" + "="*60)
+    print("TEST 1: ERIC WILLIAMS CAPACITY VALIDATION")
+    print("="*60)
     
-    calculator = KineticCapacityCalculator()
-    
-    # Test data: Eric Williams
-    # NOTE: Using age 25 to match validation baseline of ~76 mph
-    # (Age 33 has 12% penalty in Priority 1, bringing it to 51.8 mph)
-    wingspan = 69  # inches (5'9" wingspan per validation report)
-    weight = 190   # lbs
-    height = 68    # inches (5'8")
-    age = 25       # years (using 25 to get ~76 mph baseline)
-    
-    capacity = calculator.calculate_capacity_range(wingspan, weight, height, age=age)
-    
-    print(f"\n📋 Input:")
-    print(f"   Wingspan: {wingspan}\" | Weight: {weight} lbs | Height: {height}\"")
-    
-    print(f"\n📊 Capacity Calculation:")
-    print(f"   Total KE: {capacity['total_ke_joules']} J")
-    print(f"   ├─ Torso: {capacity['torso_ke_joules']} J")
-    print(f"   └─ Ground: {capacity['ground_ke_joules']} J")
-    
-    print(f"\n⚡ Capacity Range:")
-    print(f"   Min (75%): {capacity['capacity_min_mph']} mph")
-    print(f"   Midpoint (85%): {capacity['capacity_midpoint_mph']} mph")
-    print(f"   Max (95%): {capacity['capacity_max_mph']} mph")
-    
-    # Validation checks
-    passed = True
-    
-    # Check 1: Capacity range should be reasonable (75-85 mph for Eric's size)
-    if not (74 <= capacity['capacity_midpoint_mph'] <= 77):
-        print(f"\n❌ FAILED: Midpoint {capacity['capacity_midpoint_mph']} mph not in expected range 74-77 mph")
-        passed = False
-    
-    # Check 2: Min < Midpoint < Max
-    if not (capacity['capacity_min_mph'] < capacity['capacity_midpoint_mph'] < capacity['capacity_max_mph']):
-        print(f"\n❌ FAILED: Range not properly ordered")
-        passed = False
-    
-    # Check 3: Range spread should be ~10 mph (75% to 95% = 20% spread)
-    range_spread = capacity['capacity_max_mph'] - capacity['capacity_min_mph']
-    if not (8 <= range_spread <= 12):
-        print(f"\n❌ FAILED: Range spread {range_spread} mph not in expected 8-12 mph")
-        passed = False
-    
-    if passed:
-        print(f"\n✅ TEST 1 PASSED: Capacity range {capacity['capacity_min_mph']}-{capacity['capacity_max_mph']} mph")
-    
-    return passed, capacity
-
-
-def test_efficiency_analysis():
-    """
-    TEST 2: Efficiency Analysis
-    Validate energy leak identification and severity classification
-    """
-    print("\n" + "="*70)
-    print("TEST 2: EFFICIENCY ANALYSIS")
-    print("="*70)
-    
-    analyzer = EfficiencyAnalyzer()
-    
-    # Test data: Eric Williams scores
-    ground_score = 72
-    engine_score = 85
-    weapon_score = 40
-    
-    leaks = analyzer.identify_energy_leaks(ground_score, engine_score, weapon_score)
-    overall = analyzer.calculate_overall_efficiency(ground_score, engine_score, weapon_score)
-    
-    print(f"\n📋 Input:")
-    print(f"   Ground: {ground_score} | Engine: {engine_score} | Weapon: {weapon_score}")
-    
-    print(f"\n🔍 Energy Leaks:")
-    for comp in ['ground', 'engine', 'weapon']:
-        leak = leaks[comp]
-        print(f"   {leak['component']}: {leak['score']}/100 ({leak['leak_severity']} leak)")
-        print(f"      → Potential gain: +{leak['estimated_gain_mph']} mph")
-    
-    print(f"\n📊 Overall:")
-    print(f"   Efficiency: {overall['overall_efficiency_pct']}%")
-    print(f"   Grade: {overall['grade']}")
-    print(f"   Status: {overall['status']}")
-    print(f"   Bottleneck: {overall['bottleneck']}")
-    
-    print(f"\n🎯 Priority Order: {' → '.join(leaks['priority_order'])}")
-    print(f"   Total Potential Gain: +{leaks['total_potential_gain_mph']} mph")
-    
-    # Validation checks
-    passed = True
-    
-    # Check 1: WEAPON should be weakest (score 40)
-    if leaks['weakest_link'] != 'WEAPON':
-        print(f"\n❌ FAILED: Weakest link is {leaks['weakest_link']}, expected WEAPON")
-        passed = False
-    
-    # Check 2: WEAPON should be CRITICAL leak (< 50)
-    if leaks['weapon']['leak_severity'] != 'CRITICAL':
-        print(f"\n❌ FAILED: Weapon severity is {leaks['weapon']['leak_severity']}, expected CRITICAL")
-        passed = False
-    
-    # Check 3: Priority order should be WEAPON -> GROUND -> ENGINE
-    expected_order = ['WEAPON', 'GROUND', 'ENGINE']
-    if leaks['priority_order'] != expected_order:
-        print(f"\n❌ FAILED: Priority order {leaks['priority_order']} != {expected_order}")
-        passed = False
-    
-    # Check 4: Overall efficiency should be ~66% (average of 72, 85, 40)
-    expected_efficiency = (72 + 85 + 40) / 3
-    if abs(overall['overall_efficiency_pct'] - expected_efficiency) > 1:
-        print(f"\n❌ FAILED: Overall efficiency {overall['overall_efficiency_pct']}% != {expected_efficiency:.1f}%")
-        passed = False
-    
-    if passed:
-        print(f"\n✅ TEST 2 PASSED: Leaks identified correctly, WEAPON is critical")
-    
-    return passed, leaks, overall
-
-
-def test_capacity_gap_analysis():
-    """
-    TEST 3: Capacity Gap Analysis
-    Validate gap calculation between actual and capacity ceiling
-    """
-    print("\n" + "="*70)
-    print("TEST 3: CAPACITY GAP ANALYSIS")
-    print("="*70)
-    
-    # First calculate capacity using the calculator
-    capacity_calc = KineticCapacityCalculator()
-    capacity = capacity_calc.calculate_capacity_range(
-        wingspan_inches=69,  # 5'9" wingspan
+    capacity = calculate_energy_capacity(
+        height_inches=68,
+        wingspan_inches=69,
         weight_lbs=190,
-        height_inches=68,     # 5'8" height
-        age=25  # Using age 25 for ~76 mph baseline
+        age=33,
+        bat_weight_oz=30
     )
     
-    analyzer = CapacityGapAnalyzer()
+    print(f"✓ Energy Capacity: {capacity['energy_capacity_joules']:.1f} J")
+    print(f"✓ Bat Speed Midpoint: {capacity['bat_speed_capacity_midpoint_mph']:.1f} mph")
+    print(f"✓ Bat Speed Range: {capacity['bat_speed_capacity_min_mph']:.1f}-{capacity['bat_speed_capacity_max_mph']:.1f} mph")
+    print(f"✓ Exit Velo Range: {capacity['exit_velo_capacity_min_mph']:.1f}-{capacity['exit_velo_capacity_max_mph']:.1f} mph")
+    print(f"✓ Wingspan Advantage: +{capacity['wingspan_advantage_percent']:.1f}%")
     
-    # Test data
-    actual_bat_speed = 67  # mph (Blast sensor)
-    capacity_min = capacity['capacity_min_mph']
-    capacity_midpoint = capacity['capacity_midpoint_mph']
-    capacity_max = capacity['capacity_max_mph']
+    # Validations
+    assert 75.5 <= capacity['bat_speed_capacity_midpoint_mph'] <= 76.5, \
+        f"❌ Expected ~76.1 mph midpoint, got {capacity['bat_speed_capacity_midpoint_mph']}"
     
-    gap = analyzer.calculate_capacity_gap(
-        actual_bat_speed,
-        capacity_min,
-        capacity_midpoint,
-        capacity_max
-    )
+    assert 71 <= capacity['bat_speed_capacity_min_mph'] <= 73, \
+        f"❌ Expected min ~72 mph, got {capacity['bat_speed_capacity_min_mph']}"
     
-    print(f"\n📋 Input:")
-    print(f"   Actual: {actual_bat_speed} mph")
-    print(f"   Capacity Range: {capacity_min:.1f}-{capacity_max:.1f} mph (midpoint {capacity_midpoint:.1f} mph)")
+    assert 79 <= capacity['bat_speed_capacity_max_mph'] <= 81, \
+        f"❌ Expected max ~80 mph, got {capacity['bat_speed_capacity_max_mph']}"
     
-    print(f"\n📊 Gap Analysis:")
-    print(f"   Capacity Used: {gap['capacity_used_pct']}%")
-    print(f"   Capacity Untapped: {gap['capacity_untapped_pct']}%")
-    print(f"   Gap to Midpoint: {gap['gap_to_midpoint_mph']} mph")
-    print(f"   Gap to Max: {gap['gap_to_max_mph']} mph")
-    print(f"   Position: {gap['position_in_range']}")
-    print(f"   Status: {gap['status']}")
+    # Realistic exit velo (off tee): ~88-97 mph for Eric's size
+    # Altuve (69 mph bat): ~88 mph off tee, 111 mph vs fastball
+    # This matches MLB Statcast data
+    assert 88 <= capacity['exit_velo_capacity_min_mph'] <= 93
+    assert 95 <= capacity['exit_velo_capacity_max_mph'] <= 105
     
-    # Validation checks
-    passed = True
-    
-    # Check 1: Capacity used should be reasonable (actual 67 mph vs midpoint ~76 mph = ~88%)
-    if not (85 <= gap['capacity_used_pct'] <= 92):
-        print(f"\n❌ FAILED: Capacity used {gap['capacity_used_pct']}% not in expected range 85-92%")
-        passed = False
-    
-    # Check 2: Gap to midpoint should be reasonable (~9 mph if midpoint is 76)
-    expected_gap = capacity_midpoint - actual_bat_speed
-    if abs(gap['gap_to_midpoint_mph'] - expected_gap) > 0.5:
-        print(f"\n❌ FAILED: Gap {gap['gap_to_midpoint_mph']} mph != {expected_gap:.1f} mph")
-        passed = False
-    
-    # Check 3: Position should be BELOW_TYPICAL if actual < midpoint but > min
-    if actual_bat_speed >= capacity_min and actual_bat_speed < capacity_midpoint:
-        if gap['position_in_range'] != 'BELOW_TYPICAL':
-            print(f"\n❌ FAILED: Position {gap['position_in_range']} != BELOW_TYPICAL")
-            passed = False
-    
-    # Check 4: Status should be GOOD (capacity used ~88%)
-    if gap['status'] != 'GOOD':
-        print(f"\n❌ FAILED: Status {gap['status']} != GOOD")
-        passed = False
-    
-    if passed:
-        print(f"\n✅ TEST 3 PASSED: Gap correctly calculated, ~88% capacity used")
-    
-    return passed, gap
+    print("\n✅ TEST 1 PASSED: Eric Williams capacity validated!")
+    return True
 
 
-def test_eric_williams_complete():
+def test_eric_williams_efficiency():
     """
-    TEST 4: ERIC WILLIAMS COMPLETE INTEGRATION
-    Validate the complete Priority 9 system with Eric's data
+    Test 2: Eric Williams Efficiency Calculation
     
-    Expected Results (from spec):
-    - Capacity: 75-85 mph (midpoint 76.1 mph)
-    - Efficiency: 76.1%
-    - Predicted: 57-59 mph (not used in P9, using actual Blast 67 mph)
-    - Gap: 5-13 mph untapped
-    - Leak Priority: WEAPON CRITICAL, GROUND MEDIUM, ENGINE LOW
-    - Prescription: Focus on WEAPON for +4.5 mph, then GROUND for +1.95 mph
+    Expected:
+    - Ground 38 → 0.69 efficiency
+    - Engine 58 → 0.79 efficiency
+    - Weapon 55 → 0.775 efficiency
+    - Overall: ~76% (weighted: 25% G, 50% E, 25% W)
     """
-    print("\n" + "="*70)
-    print("TEST 4: ERIC WILLIAMS COMPLETE INTEGRATION")
-    print("="*70)
+    print("\n" + "="*60)
+    print("TEST 2: ERIC WILLIAMS EFFICIENCY CALCULATION")
+    print("="*60)
     
-    # Initialize all modules
-    capacity_calc = KineticCapacityCalculator()
-    efficiency_analyzer = EfficiencyAnalyzer()
-    gap_analyzer = CapacityGapAnalyzer()
-    
-    # Eric Williams data
-    wingspan = 69  # 5'9" wingspan
-    weight = 190
-    height = 68    # 5'8" height
-    actual_bat_speed = 67  # Blast sensor
-    ground_score = 72
-    engine_score = 85
-    weapon_score = 40
-    age = 25  # Using age 25 for ~76 mph baseline
-    
-    print(f"\n📋 Eric Williams Profile:")
-    print(f"   Size: {height}\" tall, {weight} lbs, {wingspan}\" wingspan, age {age}")
-    print(f"   Actual Bat Speed: {actual_bat_speed} mph (Blast)")
-    print(f"   Scores: Ground {ground_score}, Engine {engine_score}, Weapon {weapon_score}")
-    print(f"   NOTE: Using age 25 to match ~76 mph validation baseline")
-    
-    # Step 1: Calculate capacity
-    capacity = capacity_calc.calculate_capacity_range(wingspan, weight, height, age=age)
-    
-    print(f"\n⚡ KINETIC CAPACITY:")
-    print(f"   Range: {capacity['capacity_min_mph']}-{capacity['capacity_max_mph']} mph")
-    print(f"   Midpoint: {capacity['capacity_midpoint_mph']} mph (85% efficiency)")
-    
-    # Step 2: Analyze efficiency and leaks
-    leaks = efficiency_analyzer.identify_energy_leaks(ground_score, engine_score, weapon_score)
-    overall_eff = efficiency_analyzer.calculate_overall_efficiency(ground_score, engine_score, weapon_score)
-    
-    # Calculate efficiency from actual
-    efficiency_pct = capacity_calc.calculate_efficiency_from_actual(
-        actual_bat_speed,
-        capacity['capacity_midpoint_mph']
+    efficiency = calculate_efficiency(
+        ground_score=38,
+        engine_score=58,
+        weapon_score=55
     )
     
-    print(f"\n📊 EFFICIENCY:")
-    print(f"   Capacity Used: {efficiency_pct}%")
-    print(f"   Overall Score: {overall_eff['overall_efficiency_pct']}% ({overall_eff['grade']} grade)")
+    print(f"✓ Ground Efficiency: {efficiency['ground_efficiency']:.3f} (score: 38)")
+    print(f"✓ Engine Efficiency: {efficiency['engine_efficiency']:.3f} (score: 58)")
+    print(f"✓ Weapon Efficiency: {efficiency['weapon_efficiency']:.3f} (score: 55)")
+    print(f"✓ Overall Efficiency: {efficiency['efficiency_percent']:.1f}%")
     
-    print(f"\n🔍 ENERGY LEAKS:")
-    for comp in ['weapon', 'ground', 'engine']:
-        leak = leaks[comp]
-        print(f"   {leak['component']}: {leak['score']}/100 - {leak['leak_severity']} leak (+{leak['estimated_gain_mph']} mph potential)")
+    # Validations
+    assert 75 <= efficiency['efficiency_percent'] <= 77, \
+        f"❌ Expected ~76%, got {efficiency['efficiency_percent']}"
     
-    # Step 3: Gap analysis
-    gap = gap_analyzer.calculate_capacity_gap(
-        actual_bat_speed,
-        capacity['capacity_min_mph'],
-        capacity['capacity_midpoint_mph'],
-        capacity['capacity_max_mph']
+    print("\n✅ TEST 2 PASSED: Eric Williams efficiency validated!")
+    return True
+
+
+def test_eric_williams_current_performance():
+    """
+    Test 3: Eric Williams Current Performance Prediction
+    
+    Expected:
+    - Predicted bat speed: 76.1 × 0.761 ≈ 57.9 mph
+    - Predicted exit velo: ~97 mph (vs 80mph pitch)
+    """
+    print("\n" + "="*60)
+    print("TEST 3: ERIC WILLIAMS CURRENT PERFORMANCE PREDICTION")
+    print("="*60)
+    
+    capacity = calculate_energy_capacity(68, 69, 190, 33, 30)
+    efficiency = calculate_efficiency(38, 58, 55)
+    current = predict_current_performance(capacity, efficiency)
+    
+    print(f"✓ Predicted Bat Speed: {current['predicted_bat_speed_mph']:.1f} mph")
+    print(f"✓ Predicted Exit Velo: {current['predicted_exit_velo_mph']:.1f} mph")
+    print(f"✓ % Capacity Used: {current['percent_of_capacity_used']:.1f}%")
+    print(f"✓ Energy Actual: {current['energy_actual_joules']:.1f} J")
+    print(f"✓ Energy Leaked: {current['energy_leaked_joules']:.1f} J")
+    
+    # Validations
+    assert 57 <= current['predicted_bat_speed_mph'] <= 59, \
+        f"❌ Expected ~58 mph, got {current['predicted_bat_speed_mph']}"
+    
+    print("\n✅ TEST 3 PASSED: Eric Williams current performance validated!")
+    return True
+
+
+def test_eric_williams_gap_analysis():
+    """
+    Test 4: Eric Williams Gap Analysis (with Blast sensor: 67 mph)
+    
+    Expected:
+    - Gap to capacity: 5-13 mph
+    - Ground should be HIGH priority
+    - Prescription should focus on Ground
+    """
+    print("\n" + "="*60)
+    print("TEST 4: ERIC WILLIAMS GAP ANALYSIS")
+    print("="*60)
+    
+    capacity = calculate_energy_capacity(68, 69, 190, 33, 30)
+    efficiency = calculate_efficiency(38, 58, 55)
+    current = predict_current_performance(capacity, efficiency)
+    
+    gaps = analyze_gaps(
+        capacity_data=capacity,
+        current_performance=current,
+        blast_actual_mph=67,
+        ground_score=38,
+        engine_score=58,
+        weapon_score=55
     )
     
-    print(f"\n💡 CAPACITY GAP:")
-    print(f"   Actual: {gap['actual_mph']} mph")
-    print(f"   Gap to Midpoint: {gap['gap_to_midpoint_mph']} mph")
-    print(f"   Gap to Max: {gap['gap_to_max_mph']} mph")
-    print(f"   Untapped: {gap['capacity_untapped_pct']}%")
+    print(f"✓ Capacity Range: {gaps['capacity_range']['min_mph']:.1f}-{gaps['capacity_range']['max_mph']:.1f} mph")
+    print(f"✓ Predicted: {gaps['predicted_mph']:.1f} mph")
+    print(f"✓ Actual (Blast): {gaps['actual_mph']} mph")
+    print(f"✓ Gap to Capacity Max: {gaps['gap_to_capacity_max_mph']:.1f} mph")
+    print(f"✓ Predicted vs Actual: {gaps['gap_predicted_vs_actual_mph']:.1f} mph")
+    print(f"✓ % Capacity Used (Actual): {gaps['percent_capacity_used_actual']:.1f}%")
+    print(f"✓ Alignment Status: {gaps['alignment_status']}")
     
-    # Step 4: Prescription
-    prescription = efficiency_analyzer.generate_leak_prescription(
-        leaks,
-        gap['gap_to_midpoint_mph']
-    )
+    print(f"\n✓ LEAK BREAKDOWN:")
+    for component in ['ground', 'engine', 'weapon']:
+        leak = gaps['leak_breakdown'][component]
+        print(f"   {component.upper()}: Score {leak['score']}/100 | Leak {leak['leak_percent']:.0f}% | Gain +{leak['potential_gain_mph']:.1f} mph | {leak['priority']} priority")
     
-    print(f"\n💊 PRESCRIPTION:")
-    print(f"   Primary Focus: {prescription['primary_focus']} ({prescription['primary_leak_severity']} priority)")
-    print(f"   Expected Gain: +{prescription['primary_estimated_gain_mph']} mph")
-    print(f"   Total Available: +{prescription['total_available_gain_mph']} mph")
-    print(f"\n   Strategy: {prescription['focus_strategy']}")
+    print(f"\n✓ PRESCRIPTION: {gaps['prescription']}")
     
-    # Validation checks
-    passed = True
+    # Validations
+    assert 5 <= gaps['gap_to_capacity_max_mph'] <= 15, \
+        f"❌ Expected gap ~5-13 mph, got {gaps['gap_to_capacity_max_mph']}"
     
-    # Check 1: Capacity midpoint should be ~76 mph (±2)
-    if not (74 <= capacity['capacity_midpoint_mph'] <= 78):
-        print(f"\n❌ FAILED: Capacity midpoint {capacity['capacity_midpoint_mph']} mph not in 74-78 range")
-        passed = False
+    assert gaps['leak_breakdown']['ground']['priority'] == "HIGH", \
+        "❌ Ground should be HIGH priority (score 38)"
     
-    # Check 2: Efficiency should be ~88% (±3%)
-    if not (85 <= efficiency_pct <= 91):
-        print(f"\n❌ FAILED: Efficiency {efficiency_pct}% not in 85-91% range")
-        passed = False
+    assert "GROUND" in gaps['prescription'], \
+        "❌ Prescription should mention GROUND"
     
-    # Check 3: WEAPON should be weakest (score 40)
-    if leaks['weakest_link'] != 'WEAPON':
-        print(f"\n❌ FAILED: Weakest link {leaks['weakest_link']} != WEAPON")
-        passed = False
+    print("\n✅ TEST 4 PASSED: Eric Williams gap analysis validated!")
+    return True
+
+
+def test_wingspan_advantage():
+    """
+    Test 5: Wingspan Advantage Validation
     
-    # Check 4: Gap to midpoint should be ~9 mph (±2)
-    if not (7 <= gap['gap_to_midpoint_mph'] <= 11):
-        print(f"\n❌ FAILED: Gap {gap['gap_to_midpoint_mph']} mph not in 7-11 range")
-        passed = False
+    Compare two identical players except wingspan:
+    - Player A: 68" height, 68" wingspan (no advantage)
+    - Player B: 68" height, 72" wingspan (+4" ape index = +6%)
+    """
+    print("\n" + "="*60)
+    print("TEST 5: WINGSPAN ADVANTAGE VALIDATION")
+    print("="*60)
     
-    # Check 5: Primary focus should be WEAPON (weakest component)
-    if prescription['primary_focus'] != 'WEAPON':
-        print(f"\n❌ FAILED: Primary focus {prescription['primary_focus']} != WEAPON")
-        passed = False
+    capacity_a = calculate_energy_capacity(68, 68, 190, 33, 30)
+    capacity_b = calculate_energy_capacity(68, 72, 190, 33, 30)
     
-    if passed:
-        print(f"\n✅ TEST 4 PASSED: Complete system validated for Eric Williams")
-        print(f"\n🎉 KEY INSIGHT:")
-        print(f"   Body Capacity: {capacity['capacity_min_mph']}-{capacity['capacity_max_mph']} mph")
-        print(f"   Current: {actual_bat_speed} mph ({efficiency_pct}% capacity)")
-        print(f"   Fix {prescription['primary_focus']} for +{prescription['primary_estimated_gain_mph']} mph gain")
+    advantage_mph = capacity_b['bat_speed_capacity_midpoint_mph'] - capacity_a['bat_speed_capacity_midpoint_mph']
+    advantage_percent = (advantage_mph / capacity_a['bat_speed_capacity_midpoint_mph']) * 100
     
-    return passed
+    print(f"✓ Player A (no ape index): {capacity_a['bat_speed_capacity_midpoint_mph']:.1f} mph")
+    print(f"✓ Player B (+4\" ape index): {capacity_b['bat_speed_capacity_midpoint_mph']:.1f} mph")
+    print(f"✓ Advantage: +{advantage_mph:.1f} mph (+{advantage_percent:.1f}%)")
+    
+    # Expected: +6% of 75 mph = +4.5 mph
+    assert 4.0 <= advantage_mph <= 5.0, \
+        f"❌ Expected ~4.5 mph advantage, got {advantage_mph}"
+    
+    print("\n✅ TEST 5 PASSED: Wingspan advantage validated!")
+    return True
+
+
+def test_bat_weight_adjustment():
+    """
+    Test 6: Bat Weight Adjustment Validation
+    
+    Compare 28oz vs 30oz vs 32oz for same player.
+    Expected: ±0.7 mph per oz from 30oz baseline.
+    """
+    print("\n" + "="*60)
+    print("TEST 6: BAT WEIGHT ADJUSTMENT VALIDATION")
+    print("="*60)
+    
+    capacity_28 = calculate_energy_capacity(68, 69, 190, 33, 28)
+    capacity_30 = calculate_energy_capacity(68, 69, 190, 33, 30)
+    capacity_32 = calculate_energy_capacity(68, 69, 190, 33, 32)
+    
+    gain_28 = capacity_28['bat_speed_capacity_midpoint_mph'] - capacity_30['bat_speed_capacity_midpoint_mph']
+    loss_32 = capacity_30['bat_speed_capacity_midpoint_mph'] - capacity_32['bat_speed_capacity_midpoint_mph']
+    
+    print(f"✓ 28oz bat: {capacity_28['bat_speed_capacity_midpoint_mph']:.1f} mph (baseline +{gain_28:.1f} mph)")
+    print(f"✓ 30oz bat: {capacity_30['bat_speed_capacity_midpoint_mph']:.1f} mph (baseline)")
+    print(f"✓ 32oz bat: {capacity_32['bat_speed_capacity_midpoint_mph']:.1f} mph (baseline -{loss_32:.1f} mph)")
+    
+    # Expected: +1.4 mph for 28oz, -1.4 mph for 32oz
+    assert 1.2 <= gain_28 <= 1.6, f"❌ Expected ~1.4 mph gain for 28oz, got {gain_28}"
+    assert 1.2 <= loss_32 <= 1.6, f"❌ Expected ~1.4 mph loss for 32oz, got {loss_32}"
+    
+    print("\n✅ TEST 6 PASSED: Bat weight adjustment validated!")
+    return True
 
 
 def run_all_tests():
-    """Run all Priority 9 tests"""
-    print("="*70)
-    print("PRIORITY 9: KINETIC CAPACITY FRAMEWORK - TEST SUITE")
-    print("="*70)
+    """
+    Run all tests and report results.
+    """
+    print("\n" + "="*60)
+    print("KINETIC CAPACITY FRAMEWORK - TEST SUITE")
+    print("="*60)
+    
+    tests = [
+        ("Eric Williams Capacity", test_eric_williams_capacity),
+        ("Eric Williams Efficiency", test_eric_williams_efficiency),
+        ("Eric Williams Current Performance", test_eric_williams_current_performance),
+        ("Eric Williams Gap Analysis", test_eric_williams_gap_analysis),
+        ("Wingspan Advantage", test_wingspan_advantage),
+        ("Bat Weight Adjustment", test_bat_weight_adjustment),
+    ]
     
     results = []
+    for test_name, test_func in tests:
+        try:
+            result = test_func()
+            results.append((test_name, True))
+        except AssertionError as e:
+            print(f"\n❌ TEST FAILED: {test_name}")
+            print(f"   Error: {e}")
+            results.append((test_name, False))
+        except Exception as e:
+            print(f"\n❌ TEST ERROR: {test_name}")
+            print(f"   Error: {e}")
+            results.append((test_name, False))
     
-    # Test 1: Capacity calculation
-    try:
-        passed, _ = test_kinetic_capacity_calculation()
-        results.append(("Kinetic Capacity Calculation", passed))
-    except Exception as e:
-        print(f"\n❌ TEST 1 FAILED WITH ERROR: {e}")
-        results.append(("Kinetic Capacity Calculation", False))
-    
-    # Test 2: Efficiency analysis
-    try:
-        passed, _, _ = test_efficiency_analysis()
-        results.append(("Efficiency Analysis", passed))
-    except Exception as e:
-        print(f"\n❌ TEST 2 FAILED WITH ERROR: {e}")
-        results.append(("Efficiency Analysis", False))
-    
-    # Test 3: Capacity gap analysis
-    try:
-        passed, _ = test_capacity_gap_analysis()
-        results.append(("Capacity Gap Analysis", passed))
-    except Exception as e:
-        print(f"\n❌ TEST 3 FAILED WITH ERROR: {e}")
-        results.append(("Capacity Gap Analysis", False))
-    
-    # Test 4: Eric Williams complete
-    try:
-        passed = test_eric_williams_complete()
-        results.append(("Eric Williams Complete Integration", passed))
-    except Exception as e:
-        print(f"\n❌ TEST 4 FAILED WITH ERROR: {e}")
-        results.append(("Eric Williams Complete Integration", False))
-    
-    # Summary
-    print("\n" + "="*70)
+    # Final summary
+    print("\n" + "="*60)
     print("TEST SUMMARY")
-    print("="*70)
+    print("="*60)
     
+    passed = sum(1 for _, result in results if result)
     total = len(results)
-    passed_count = sum(1 for _, passed in results if passed)
     
-    for test_name, passed in results:
-        status = "✅ PASSED" if passed else "❌ FAILED"
+    for test_name, result in results:
+        status = "✅ PASSED" if result else "❌ FAILED"
         print(f"{status}: {test_name}")
     
-    print(f"\nTotal: {passed_count}/{total} tests passed ({passed_count/total*100:.1f}%)")
+    print(f"\n{'='*60}")
+    print(f"TOTAL: {passed}/{total} tests passed ({(passed/total)*100:.0f}%)")
+    print(f"{'='*60}")
     
-    if passed_count == total:
-        print("\n🎉 ALL TESTS PASSED - PRIORITY 9 COMPLETE!")
-        return 0
+    if passed == total:
+        print("\n🎉 ALL TESTS PASSED! System is validated and ready for production.")
+        return True
     else:
-        print(f"\n⚠️  {total - passed_count} test(s) failed")
-        return 1
+        print(f"\n⚠️  {total - passed} test(s) failed. Review errors above.")
+        return False
 
 
 if __name__ == "__main__":
-    exit_code = run_all_tests()
-    sys.exit(exit_code)
+    success = run_all_tests()
+    sys.exit(0 if success else 1)

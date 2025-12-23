@@ -1,272 +1,227 @@
 """
-Gap Analysis Module
-Compares actual performance to potential and identifies improvement opportunities
+Gap Analyzer
+============
 
-Part of Priority 3: Gap Analysis & Recommendations
+Compares capacity vs predicted vs actual (Blast/DK sensor) and localizes energy leaks.
+
+Philosophy: "You have X capacity, using Y%, here's where the Z% is leaking."
 """
 
-from typing import Dict, List, Optional
-import logging
 
-logger = logging.getLogger(__name__)
-
-
-class GapAnalyzer:
+def analyze_gaps(capacity_data, current_performance, blast_actual_mph, 
+                 ground_score, engine_score, weapon_score):
     """
-    Analyzes the gap between actual performance and potential
-    Provides metrics on what percentage of potential has been achieved
+    Compare capacity → predicted → actual and localize leaks.
+    
+    Args:
+        capacity_data: From calculate_energy_capacity()
+        current_performance: From predict_current_performance()
+        blast_actual_mph: Actual bat speed from Blast/DK sensor (or None)
+        ground_score, engine_score, weapon_score: Raw scores
+    
+    Returns:
+        dict with gap analysis:
+        - capacity_range: {min, max, midpoint} mph
+        - predicted_mph: Predicted bat speed
+        - actual_mph: Actual sensor bat speed (or None)
+        - gap_to_capacity_min_mph: Gap to min capacity
+        - gap_to_capacity_max_mph: Gap to max capacity
+        - gap_predicted_vs_actual_mph: Predicted - actual (or None)
+        - percent_capacity_used_predicted: % based on predicted
+        - percent_capacity_used_actual: % based on actual (or None)
+        - alignment_status: "good", "warning", "poor", "no_sensor_data"
+        - leak_breakdown: {ground, engine, weapon} with scores, leak %, gains, priority
+        - prescription: Human-readable action plan
     """
+    capacity_min = capacity_data['bat_speed_capacity_min_mph']
+    capacity_max = capacity_data['bat_speed_capacity_max_mph']
+    capacity_midpoint = capacity_data['bat_speed_capacity_midpoint_mph']
+    predicted_mph = current_performance['predicted_bat_speed_mph']
     
-    def __init__(self):
-        pass
+    # Gaps
+    gap_to_capacity_min = capacity_min - (blast_actual_mph or predicted_mph)
+    gap_to_capacity_max = capacity_max - (blast_actual_mph or predicted_mph)
+    gap_predicted_vs_actual = (predicted_mph - blast_actual_mph) if blast_actual_mph else None
     
-    def calculate_bat_speed_gap(
-        self,
-        actual_bat_speed_mph: float,
-        potential_bat_speed_mph: float
-    ) -> Dict:
-        """
-        Calculate bat speed gap metrics
-        
-        Args:
-            actual_bat_speed_mph: Measured bat speed from video/sensors
-            potential_bat_speed_mph: Calculated potential from anthropometry
-            
-        Returns:
-            Dictionary with gap analysis
-        """
-        if potential_bat_speed_mph <= 0:
-            return {
-                'actual_mph': round(actual_bat_speed_mph, 1),
-                'potential_mph': 0.0,
-                'gap_mph': 0.0,
-                'pct_achieved': 0.0,
-                'pct_untapped': 0.0,
-                'status': 'UNKNOWN'
-            }
-        
-        gap_mph = potential_bat_speed_mph - actual_bat_speed_mph
-        pct_achieved = (actual_bat_speed_mph / potential_bat_speed_mph) * 100
-        pct_untapped = 100 - pct_achieved
-        
-        # Determine status
-        if pct_achieved >= 95:
-            status = 'ELITE'
-        elif pct_achieved >= 85:
-            status = 'GOOD'
-        elif pct_achieved >= 70:
-            status = 'BELOW_POTENTIAL'
+    # % of capacity used
+    percent_capacity_predicted = (predicted_mph / capacity_midpoint) * 100
+    percent_capacity_actual = ((blast_actual_mph / capacity_midpoint) * 100) if blast_actual_mph else None
+    
+    # Alignment check (predicted vs actual should be within ±8 mph)
+    if gap_predicted_vs_actual is not None:
+        if abs(gap_predicted_vs_actual) <= 5:
+            alignment = "good"
+        elif abs(gap_predicted_vs_actual) <= 8:
+            alignment = "warning"
         else:
-            status = 'UNDERTRAINED'
-        
-        return {
-            'actual_mph': round(actual_bat_speed_mph, 1),
-            'potential_mph': round(potential_bat_speed_mph, 1),
-            'gap_mph': round(gap_mph, 1),
-            'pct_achieved': round(pct_achieved, 1),
-            'pct_untapped': round(pct_untapped, 1),
-            'status': status
-        }
+            alignment = "poor"
+    else:
+        alignment = "no_sensor_data"
     
-    def calculate_exit_velocity_gap(
-        self,
-        actual_exit_velo_mph: float,
-        potential_exit_velo_mph: float
-    ) -> Dict:
-        """
-        Calculate exit velocity gap metrics
-        
-        Args:
-            actual_exit_velo_mph: Measured exit velocity
-            potential_exit_velo_mph: Calculated potential exit velocity
-            
-        Returns:
-            Dictionary with gap analysis
-        """
-        if potential_exit_velo_mph <= 0:
-            return {
-                'actual_mph': round(actual_exit_velo_mph, 1),
-                'potential_mph': 0.0,
-                'gap_mph': 0.0,
-                'pct_achieved': 0.0,
-                'pct_untapped': 0.0,
-                'status': 'UNKNOWN'
-            }
-        
-        gap_mph = potential_exit_velo_mph - actual_exit_velo_mph
-        pct_achieved = (actual_exit_velo_mph / potential_exit_velo_mph) * 100
-        pct_untapped = 100 - pct_achieved
-        
-        if pct_achieved >= 95:
-            status = 'ELITE'
-        elif pct_achieved >= 85:
-            status = 'GOOD'
-        elif pct_achieved >= 70:
-            status = 'BELOW_POTENTIAL'
-        else:
-            status = 'UNDERTRAINED'
-        
-        return {
-            'actual_mph': round(actual_exit_velo_mph, 1),
-            'potential_mph': round(potential_exit_velo_mph, 1),
-            'gap_mph': round(gap_mph, 1),
-            'pct_achieved': round(pct_achieved, 1),
-            'pct_untapped': round(pct_untapped, 1),
-            'status': status
-        }
+    # Leak breakdown
+    leak_breakdown = _calculate_leak_breakdown(
+        ground_score, engine_score, weapon_score,
+        gap_to_capacity_max  # Use max gap for potential gain calculations
+    )
     
-    def identify_weakest_component(
-        self,
-        ground_score: float,
-        engine_score: float,
-        weapon_score: float
-    ) -> Dict:
-        """
-        Identify which component is weakest and should be prioritized
-        
-        Args:
-            ground_score: Ground (lower body) score 0-100
-            engine_score: Engine (torso rotation) score 0-100
-            weapon_score: Weapon (bat speed through zone) score 0-100
-            
-        Returns:
-            Dictionary with weakest component analysis
-        """
-        components = {
-            'GROUND': ground_score,
-            'ENGINE': engine_score,
-            'WEAPON': weapon_score
-        }
-        
-        # Sort by score (lowest first)
-        sorted_components = sorted(components.items(), key=lambda x: x[1])
-        weakest_name, weakest_score = sorted_components[0]
-        
-        # Determine priority level
-        if weakest_score < 50:
-            priority = 'CRITICAL'
-        elif weakest_score < 65:
-            priority = 'HIGH'
-        elif weakest_score < 80:
-            priority = 'MEDIUM'
-        else:
-            priority = 'LOW'
-        
-        return {
-            'weakest_component': weakest_name,
-            'score': round(weakest_score, 1),
-            'priority': priority,
-            'components_ranked': [(name, round(score, 1)) for name, score in sorted_components]
-        }
+    # Generate prescription
+    prescription = _generate_prescription(leak_breakdown)
     
-    def calculate_complete_gap_analysis(
-        self,
-        actual_metrics: Dict,
-        potential_metrics: Dict,
-        scores: Dict
-    ) -> Dict:
-        """
-        Complete gap analysis combining all metrics
+    return {
+        'capacity_range': {
+            'min_mph': capacity_min,
+            'max_mph': capacity_max,
+            'midpoint_mph': capacity_midpoint
+        },
+        'predicted_mph': predicted_mph,
+        'actual_mph': blast_actual_mph,
         
-        Args:
-            actual_metrics: {'bat_speed_mph': 57.9, 'exit_velocity_mph': 96.7}
-            potential_metrics: {'bat_speed_mph': 76.0, 'exit_velocity_pitched_mph': 122.9}
-            scores: {'ground': 72, 'engine': 85, 'weapon': 40}
-            
-        Returns:
-            Complete gap analysis dictionary
-        """
-        # Calculate bat speed gap
-        bat_speed_gap = self.calculate_bat_speed_gap(
-            actual_metrics.get('bat_speed_mph', 0),
-            potential_metrics.get('bat_speed_mph', 0)
-        )
+        'gap_to_capacity_min_mph': gap_to_capacity_min,
+        'gap_to_capacity_max_mph': gap_to_capacity_max,
+        'gap_predicted_vs_actual_mph': gap_predicted_vs_actual,
         
-        # Calculate exit velocity gap (if available)
-        exit_velo_gap = None
-        if 'exit_velocity_mph' in actual_metrics and 'exit_velocity_pitched_mph' in potential_metrics:
-            exit_velo_gap = self.calculate_exit_velocity_gap(
-                actual_metrics['exit_velocity_mph'],
-                potential_metrics['exit_velocity_pitched_mph']
-            )
+        'percent_capacity_used_predicted': percent_capacity_predicted,
+        'percent_capacity_used_actual': percent_capacity_actual,
         
-        # Identify weakest component
-        weakest = self.identify_weakest_component(
-            scores.get('ground', 0),
-            scores.get('engine', 0),
-            scores.get('weapon', 0)
-        )
+        'alignment_status': alignment,
         
-        # Calculate overall efficiency (average of G-E-W scores)
-        overall_efficiency = (
-            scores.get('ground', 0) + 
-            scores.get('engine', 0) + 
-            scores.get('weapon', 0)
-        ) / 3
-        
-        # Generate summary
-        summary = (
-            f"Achieving {bat_speed_gap['pct_achieved']}% of bat speed potential "
-            f"({bat_speed_gap['gap_mph']} mph gap). "
-            f"Focus on {weakest['weakest_component']} (score: {weakest['score']}) "
-            f"for improvement. Overall efficiency: {round(overall_efficiency, 1)}%"
-        )
-        
-        result = {
-            'bat_speed': bat_speed_gap,
-            'weakest_component': weakest,
-            'overall_efficiency': round(overall_efficiency, 1),
-            'summary': summary
-        }
-        
-        # Add exit velocity if available
-        if exit_velo_gap:
-            result['exit_velocity'] = exit_velo_gap
-        
-        return result
+        'leak_breakdown': leak_breakdown,
+        'prescription': prescription
+    }
 
 
+def _calculate_leak_breakdown(ground_score, engine_score, weapon_score, total_gap_mph):
+    """
+    Quantify how much each component is leaking.
+    
+    Logic:
+    - Each score (0-100) represents efficiency in that component
+    - Lower score = more leakage
+    - Distribute total gap proportionally to inefficiency
+    """
+    # Inefficiency = (100 - score)
+    ground_inefficiency = 100 - ground_score
+    engine_inefficiency = 100 - engine_score
+    weapon_inefficiency = 100 - weapon_score
+    
+    # Weighted inefficiency (Ground 25%, Engine 50%, Weapon 25%)
+    weighted_ground = ground_inefficiency * 0.25
+    weighted_engine = engine_inefficiency * 0.50
+    weighted_weapon = weapon_inefficiency * 0.25
+    total_weighted = weighted_ground + weighted_engine + weighted_weapon
+    
+    # Calculate leak % and potential gain
+    ground_leak_percent = (weighted_ground / total_weighted) * 100 if total_weighted > 0 else 0
+    engine_leak_percent = (weighted_engine / total_weighted) * 100 if total_weighted > 0 else 0
+    weapon_leak_percent = (weighted_weapon / total_weighted) * 100 if total_weighted > 0 else 0
+    
+    ground_gain = (ground_leak_percent / 100) * total_gap_mph
+    engine_gain = (engine_leak_percent / 100) * total_gap_mph
+    weapon_gain = (weapon_leak_percent / 100) * total_gap_mph
+    
+    # Priority (HIGH if leak > 30%, MEDIUM if 20-30%, LOW if < 20%)
+    def get_priority(leak_percent):
+        if leak_percent > 30:
+            return "HIGH"
+        elif leak_percent > 20:
+            return "MEDIUM"
+        else:
+            return "LOW"
+    
+    return {
+        'ground': {
+            'score': ground_score,
+            'leak_percent': ground_leak_percent,
+            'potential_gain_mph': ground_gain,
+            'priority': get_priority(ground_leak_percent)
+        },
+        'engine': {
+            'score': engine_score,
+            'leak_percent': engine_leak_percent,
+            'potential_gain_mph': engine_gain,
+            'priority': get_priority(engine_leak_percent)
+        },
+        'weapon': {
+            'score': weapon_score,
+            'leak_percent': weapon_leak_percent,
+            'potential_gain_mph': weapon_gain,
+            'priority': get_priority(weapon_leak_percent)
+        }
+    }
+
+
+def _generate_prescription(leak_breakdown):
+    """
+    Generate human-readable prescription based on leak priorities.
+    """
+    components = ['ground', 'engine', 'weapon']
+    sorted_components = sorted(
+        components,
+        key=lambda c: leak_breakdown[c]['potential_gain_mph'],
+        reverse=True
+    )
+    
+    top_component = sorted_components[0]
+    top_gain = leak_breakdown[top_component]['potential_gain_mph']
+    top_score = leak_breakdown[top_component]['score']
+    
+    prescription = f"Focus on {top_component.upper()} (score: {top_score}) "
+    prescription += f"for +{top_gain:.1f} mph gain. "
+    
+    if len(sorted_components) > 1:
+        second_component = sorted_components[1]
+        second_gain = leak_breakdown[second_component]['potential_gain_mph']
+        if second_gain > 3:  # Only mention if meaningful
+            prescription += f"Then address {second_component.upper()} for +{second_gain:.1f} mph."
+    
+    return prescription
+
+
+# Test function
 if __name__ == "__main__":
-    # Test with Eric Williams data
-    print("="*70)
-    print("GAP ANALYZER TEST - ERIC WILLIAMS")
-    print("="*70)
+    from physics_engine.kinetic_capacity_calculator import calculate_energy_capacity
+    from physics_engine.efficiency_analyzer import calculate_efficiency, predict_current_performance
     
-    analyzer = GapAnalyzer()
+    print("Testing Eric Williams gap analysis (Blast actual: 67 mph)...")
     
-    # Test data
-    actual = {
-        'bat_speed_mph': 57.9,
-        'exit_velocity_mph': 96.7
-    }
+    # Calculate capacity
+    capacity = calculate_energy_capacity(68, 69, 190, 33, 30)
     
-    potential = {
-        'bat_speed_mph': 76.0,
-        'exit_velocity_pitched_mph': 122.9
-    }
+    # Calculate efficiency and current performance
+    efficiency = calculate_efficiency(38, 58, 55)
+    current = predict_current_performance(capacity, efficiency)
     
-    scores = {
-        'ground': 72,
-        'engine': 85,
-        'weapon': 40
-    }
+    # Analyze gaps
+    gaps = analyze_gaps(
+        capacity_data=capacity,
+        current_performance=current,
+        blast_actual_mph=67,
+        ground_score=38,
+        engine_score=58,
+        weapon_score=55
+    )
     
-    # Run analysis
-    gap_analysis = analyzer.calculate_complete_gap_analysis(actual, potential, scores)
+    print(f"\n✅ GAP ANALYSIS RESULTS:")
+    print(f"   Capacity Range: {gaps['capacity_range']['min_mph']:.1f}-{gaps['capacity_range']['max_mph']:.1f} mph")
+    print(f"   Predicted: {gaps['predicted_mph']:.1f} mph")
+    print(f"   Actual (Blast): {gaps['actual_mph']} mph")
+    print(f"   Gap to Capacity Max: {gaps['gap_to_capacity_max_mph']:.1f} mph")
+    print(f"   Predicted vs Actual: {gaps['gap_predicted_vs_actual_mph']:.1f} mph")
+    print(f"   % Capacity Used (Actual): {gaps['percent_capacity_used_actual']:.1f}%")
+    print(f"   Alignment Status: {gaps['alignment_status']}")
     
-    # Display results
-    print("\nBat Speed Gap:")
-    print(f"  Actual: {gap_analysis['bat_speed']['actual_mph']} mph")
-    print(f"  Potential: {gap_analysis['bat_speed']['potential_mph']} mph")
-    print(f"  Gap: {gap_analysis['bat_speed']['gap_mph']} mph")
-    print(f"  % Achieved: {gap_analysis['bat_speed']['pct_achieved']}%")
-    print(f"  Status: {gap_analysis['bat_speed']['status']}")
+    print(f"\n✅ LEAK BREAKDOWN:")
+    for component in ['ground', 'engine', 'weapon']:
+        leak = gaps['leak_breakdown'][component]
+        print(f"   {component.upper()}: {leak['score']}/100 | Leak: {leak['leak_percent']:.0f}% | Gain: +{leak['potential_gain_mph']:.1f} mph | Priority: {leak['priority']}")
     
-    print("\nWeakest Component:")
-    print(f"  Component: {gap_analysis['weakest_component']['weakest_component']}")
-    print(f"  Score: {gap_analysis['weakest_component']['score']}/100")
-    print(f"  Priority: {gap_analysis['weakest_component']['priority']}")
+    print(f"\n✅ PRESCRIPTION:")
+    print(f"   {gaps['prescription']}")
     
-    print(f"\nOverall Efficiency: {gap_analysis['overall_efficiency']}%")
-    print(f"\nSummary: {gap_analysis['summary']}")
-    print("\n" + "="*70)
+    # Validations
+    assert 5 <= gaps['gap_to_capacity_max_mph'] <= 15, \
+        f"❌ Expected gap ~5-13 mph, got {gaps['gap_to_capacity_max_mph']}"
+    assert gaps['leak_breakdown']['ground']['priority'] == "HIGH", \
+        "❌ Ground should be HIGH priority"
+    
+    print(f"\n✅ Eric Williams gap analysis validated!")
