@@ -330,6 +330,11 @@ def create_reboot_data_export(
         
         response = requests.post(endpoint, headers=headers, json=payload, timeout=60)
         
+        logger.info(f"📥 Reboot API Response:")
+        logger.info(f"   Status Code: {response.status_code}")
+        logger.info(f"   Headers: {dict(response.headers)}")
+        logger.info(f"   Body: {response.text[:500]}")  # First 500 chars
+        
         if response.status_code == 200:
             data = response.json()
             logger.info(f"✅ Data Export created successfully")
