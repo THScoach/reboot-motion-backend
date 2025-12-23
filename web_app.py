@@ -81,17 +81,22 @@ async def analyze_video(
         frame_count = 0
         pose_frames = []  # Store PoseFrame objects
         
-        while cap.isOpened():
+        # Optimize: Process every 2nd frame for 30 FPS, every 5th for higher FPS
+        frame_skip = 2 if metadata.fps <= 60 else 5
+        max_frames = 500  # Limit total frames processed
+        
+        while cap.isOpened() and frame_count < max_frames * frame_skip:
             ret, frame = cap.read()
             if not ret:
                 break
             
-            # Process every frame
-            timestamp_ms = video_proc.frame_number_to_time_ms(frame_count)
-            pose_frame = pose_detector.process_frame(frame, frame_count, timestamp_ms)
-            
-            if pose_frame.is_valid:
-                pose_frames.append(pose_frame)
+            # Only process every Nth frame
+            if frame_count % frame_skip == 0:
+                timestamp_ms = video_proc.frame_number_to_time_ms(frame_count)
+                pose_frame = pose_detector.process_frame(frame, frame_count, timestamp_ms)
+                
+                if pose_frame.is_valid:
+                    pose_frames.append(pose_frame)
             
             frame_count += 1
         
