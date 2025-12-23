@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ player_name }} - Analysis Results</title>
+    <link rel="stylesheet" href="/static/css/results.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Biomechanics Analysis Report</h1>
+            <div class="player-info">
+                <h2>{{ player_name }}</h2>
+                <p>Age: {{ age }} | Height: {{ height }}" | Weight: {{ weight }} lbs</p>
+                <p>Analysis Date: {{ analysis_date }}</p>
+            </div>
+        </header>
+
+        <!-- Gap Analysis Card -->
+        <section class="card gap-card">
+            <h2>🎯 Your Potential vs Actual</h2>
+            <div class="gap-visual">
+                <div class="metric-column">
+                    <div class="metric">
+                        <span class="label">Actual</span>
+                        <span class="value actual">{{ actual_bat_speed }} mph</span>
+                    </div>
+                </div>
+                <div class="gap-indicator">
+                    <div class="gap-arrow">→</div>
+                    <div class="gap-text">
+                        <span class="gap-value">{{ gap_mph }} mph gap</span>
+                        <span class="gap-subtitle">{{ pct_untapped }}% untapped</span>
+                    </div>
+                </div>
+                <div class="metric-column">
+                    <div class="metric">
+                        <span class="label">Potential</span>
+                        <span class="value potential">{{ potential_bat_speed }} mph</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ pct_achieved }}%"></div>
+                </div>
+                <div class="progress-labels">
+                    <span>{{ pct_achieved }}% of potential achieved</span>
+                    <span class="status-badge status-{{ gap_status }}">{{ gap_status }}</span>
+                </div>
+            </div>
+            
+            <!-- Gap Chart -->
+            <div class="chart-container">
+                <img src="{{ gap_chart_url }}" alt="Gap Analysis Chart" class="chart-image">
+            </div>
+        </section>
+
+        <!-- Component Scores Card -->
+        <section class="card scores-card">
+            <h2>📊 Component Scores</h2>
+            <div class="scores-visual">
+                <div class="score-item" data-score="{{ ground_score }}">
+                    <div class="score-circle" style="--score: {{ ground_score }}">
+                        <span class="score-value">{{ ground_score }}</span>
+                    </div>
+                    <span class="score-label">Ground</span>
+                    <span class="score-description">Lower body mechanics</span>
+                </div>
+                <div class="score-item" data-score="{{ engine_score }}">
+                    <div class="score-circle" style="--score: {{ engine_score }}">
+                        <span class="score-value">{{ engine_score }}</span>
+                    </div>
+                    <span class="score-label">Engine</span>
+                    <span class="score-description">Core rotation</span>
+                </div>
+                <div class="score-item" data-score="{{ weapon_score }}">
+                    <div class="score-circle" style="--score: {{ weapon_score }}">
+                        <span class="score-value">{{ weapon_score }}</span>
+                    </div>
+                    <span class="score-label">Weapon</span>
+                    <span class="score-description">Hand path & bat</span>
+                </div>
+            </div>
+            
+            <!-- Radar Chart -->
+            <div class="chart-container">
+                <img src="{{ radar_chart_url }}" alt="Component Scores Radar" class="chart-image">
+            </div>
+            
+            <div class="overall-efficiency">
+                <span class="label">Overall Efficiency:</span>
+                <span class="value">{{ overall_efficiency }}%</span>
+            </div>
+        </section>
+
+        <!-- Motor Profile Card -->
+        <section class="card profile-card">
+            <h2>🏆 Motor Profile</h2>
+            <div class="profile-header">
+                <div class="profile-badge profile-{{ motor_profile }}">
+                    {{ motor_profile }}
+                </div>
+                <div class="profile-confidence">
+                    <span class="label">Confidence:</span>
+                    <span class="value">{{ motor_profile_confidence }}%</span>
+                </div>
+            </div>
+            
+            <div class="profile-description">
+                <p>{{ profile_description }}</p>
+            </div>
+            
+            <div class="profile-details">
+                <div class="profile-section">
+                    <h4>✅ Advantages:</h4>
+                    <ul>
+                        {% for advantage in profile_advantages %}
+                        <li>{{ advantage }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="profile-section">
+                    <h4>⚠️ Areas to Improve:</h4>
+                    <ul>
+                        {% for disadvantage in profile_disadvantages %}
+                        <li>{{ disadvantage }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            
+            {% if famous_examples %}
+            <div class="famous-examples">
+                <p><strong>Similar players:</strong> {{ famous_examples|join(', ') }}</p>
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- Recommendations Card -->
+        <section class="card recommendations-card">
+            <h2>🎯 How to Improve</h2>
+            
+            <div class="primary-recommendation">
+                <div class="rec-header">
+                    <h3>Primary Focus: {{ primary_component }}</h3>
+                    <div class="gain-badge">
+                        <span class="gain-value">+{{ estimated_gain_mph }}</span>
+                        <span class="gain-label">mph potential</span>
+                    </div>
+                </div>
+                
+                <div class="rec-priority priority-{{ priority }}">
+                    <span class="priority-badge">{{ priority }} Priority</span>
+                </div>
+                
+                <div class="rec-guidance">
+                    <p>{{ motor_profile_guidance }}</p>
+                </div>
+                
+                <div class="rec-drills">
+                    <h4>Recommended Drills:</h4>
+                    <ol class="drill-list">
+                        {% for drill in recommended_drills %}
+                        <li>{{ drill }}</li>
+                        {% endfor %}
+                    </ol>
+                </div>
+                
+                <div class="rec-training">
+                    <p><strong>Training Frequency:</strong> {{ training_frequency }}</p>
+                </div>
+            </div>
+            
+            {% if secondary_recommendations %}
+            <div class="secondary-recommendations">
+                <h4>Secondary Focus:</h4>
+                {% for rec in secondary_recommendations %}
+                <div class="secondary-rec-item">
+                    <span class="component">{{ rec.component }}</span>
+                    <span class="gain">+{{ rec.estimated_gain_mph }} mph potential</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <div class="total-potential">
+                <p>
+                    <strong>Total Potential Gain:</strong> 
+                    <span class="total-gain">+{{ total_estimated_gain_mph }} mph</span>
+                </p>
+                <p class="projection">
+                    This would bring your bat speed from <strong>{{ actual_bat_speed }} mph</strong> to 
+                    <strong>{{ actual_bat_speed + total_estimated_gain_mph }} mph</strong>
+                </p>
+            </div>
+        </section>
+
+        <!-- Additional Charts -->
+        <section class="card charts-card">
+            <h2>📈 Detailed Analysis</h2>
+            <div class="charts-grid">
+                {% if sequence_chart_url %}
+                <div class="chart-item">
+                    <h4>Kinematic Sequence</h4>
+                    <img src="{{ sequence_chart_url }}" alt="Kinematic Sequence" class="chart-image">
+                </div>
+                {% endif %}
+                
+                {% if energy_chart_url %}
+                <div class="chart-item">
+                    <h4>Energy Distribution</h4>
+                    <img src="{{ energy_chart_url }}" alt="Energy Distribution" class="chart-image">
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Action Plan -->
+        <section class="card action-plan-card">
+            <h2>📋 4-6 Week Action Plan</h2>
+            <div class="action-steps">
+                <div class="action-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Focus on {{ primary_component }}</h4>
+                        <p>Train {{ training_frequency }} with emphasis on {{ primary_component|lower }} development.</p>
+                    </div>
+                </div>
+                
+                <div class="action-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Execute Recommended Drills</h4>
+                        <p>Incorporate the {{ recommended_drills|length }} drills listed above into your training routine.</p>
+                    </div>
+                </div>
+                
+                <div class="action-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Track Progress</h4>
+                        <p>Record your swings weekly to monitor improvement in {{ primary_component|lower }} metrics.</p>
+                    </div>
+                </div>
+                
+                <div class="action-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Reassess</h4>
+                        <p>Return for another analysis in 4-6 weeks to measure progress toward your potential.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Generated by Kinetic DNA Blueprint</p>
+            <div class="footer-actions">
+                <button class="btn btn-primary" onclick="window.print()">Print Report</button>
+                <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
