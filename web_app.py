@@ -125,7 +125,7 @@ async def analyze_video(
         
         # 7. Calculate scores
         scoring_engine = ScoringEngine()
-        scores = scoring_engine.calculate_all_scores(velocities, events, kinetic_seq)
+        scores = scoring_engine.calculate_all_scores(velocities, events, kinetic_seq, weight_lbs)
         
         # 8. Build response
         response = {
@@ -215,16 +215,18 @@ def get_score_interpretation(score: int) -> str:
         return "Developing"
 
 
-def get_transfer_interpretation(transfer_ratio: float) -> str:
-    """Interpret transfer ratio"""
-    if transfer_ratio >= 1.20:
+def get_transfer_interpretation(transfer_pct: int) -> str:
+    """Interpret transfer ratio percentage"""
+    if transfer_pct >= 85:
         return "Elite - Excellent energy transfer"
-    elif transfer_ratio >= 1.0:
-        return "Good - Efficient kinetic chain"
-    elif transfer_ratio >= 0.8:
-        return "Average - Room for improvement"
+    elif transfer_pct >= 75:
+        return "Strong - Solid kinetic chain"
+    elif transfer_pct >= 65:
+        return "Good - Room for improvement"
+    elif transfer_pct >= 55:
+        return "Developing - Energy leaks present"
     else:
-        return "Needs work - Energy leaks in the chain"
+        return "Focus area - Significant energy loss"
 
 
 @app.get("/health")

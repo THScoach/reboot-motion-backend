@@ -28,7 +28,7 @@ class SwingScores:
     weapon_score: int           # Ball: Bat speed through zone (0-100)
     
     # Additional metrics
-    transfer_ratio: float       # Energy transfer efficiency (ideal >1.20)
+    transfer_ratio: int         # Energy transfer efficiency percentage (0-100)
     sequence_score: int         # Kinetic chain quality (0-100)
     
     # Peak velocities
@@ -37,7 +37,8 @@ class SwingScores:
     peak_bat_velocity: float     # m/s (mph when multiplied by 2.237)
     
     # Motor profile classification
-    motor_profile: str          # "Rotational", "Linear", "Hybrid"
+    motor_profile: str          # "Spinner", "Slingshotter", "Whipper", "Titan-X"
+    motor_profile_confidence: int  # Confidence percentage (60-95)
     
     def get_overall_score(self) -> int:
         """Calculate overall swing quality (0-100)"""
@@ -50,12 +51,13 @@ class SwingScores:
             "ground_score": self.ground_score,
             "engine_score": self.engine_score,
             "weapon_score": self.weapon_score,
-            "transfer_ratio": round(self.transfer_ratio, 2),
+            "transfer_ratio": self.transfer_ratio,  # Now as percentage
             "sequence_score": self.sequence_score,
             "peak_bat_velocity_mph": round(self.peak_bat_velocity * 2.237, 1),
             "peak_pelvis_velocity": round(self.peak_pelvis_velocity, 0),
             "peak_torso_velocity": round(self.peak_torso_velocity, 0),
             "motor_profile": self.motor_profile,
+            "motor_profile_confidence": self.motor_profile_confidence,
             "overall_score": self.get_overall_score()
         }
 
@@ -219,19 +221,18 @@ class ScoringEngine:
         return min(100, max(0, score)), peak_bat
     
     def calculate_transfer_ratio(self, ground_score: int, engine_score: int,
-                                 weapon_score: int) -> float:
+                                 weapon_score: int) -> int:
         """
-        Calculate Transfer Ratio (efficiency metric)
+        Calculate Transfer Ratio as percentage (0-100)
         
         Measures how well energy transfers from:
         Ground → Engine → Weapon
         
-        Perfect transfer: Each stage amplifies the previous
-        Transfer Ratio = (Weapon / Ground) * efficiency_factor
-        
-        Elite: >1.20
-        Good: 1.0 - 1.20
-        Poor: <1.0
+        Elite: 85-100%
+        Strong: 75-84%
+        Good: 65-74%
+        Developing: 55-64%
+        Focus Area: <55%
         
         Args:
             ground_score: Ground score (0-100)
@@ -239,10 +240,10 @@ class ScoringEngine:
             weapon_score: Weapon score (0-100)
         
         Returns:
-            Transfer ratio
+            Transfer ratio as percentage (0-100)
         """
         if ground_score == 0:
-            return 0.0
+            return 0
         
         # Basic ratio
         base_ratio = weapon_score / ground_score
@@ -251,40 +252,67 @@ class ScoringEngine:
         engine_factor = engine_score / 100.0
         transfer_ratio = base_ratio * (0.7 + 0.3 * engine_factor)
         
-        return transfer_ratio
+        # Convert to percentage (0-100 scale)
+        transfer_pct = int(transfer_ratio * 100)
+        
+        return min(100, max(0, transfer_pct))
     
     def classify_motor_profile(self, ground_score: int, engine_score: int,
-                               weapon_score: int) -> str:
+                               weapon_score: int, weight_lbs: float = 160) -> tuple:
         """
         Classify motor profile based on score distribution
         
-        Rotational: High engine, moderate ground
-        Linear: High ground, moderate engine
-        Hybrid: Balanced scores
+        Spinner: High engine, rotation-first
+        Slingshotter: High separation, late hands
+        Whipper: High weapon, arm speed > body speed
+        Titan: Size modifier for weight > 200 lbs
         
         Args:
             ground_score: Ground score
             engine_score: Engine score
             weapon_score: Weapon score
+            weight_lbs: Athlete weight in pounds
         
         Returns:
-            Motor profile classification
+            (profile_name, confidence_pct)
         """
-        ground_pct = ground_score / 100.0
-        engine_pct = engine_score / 100.0
+        # Normalize scores
+        total = ground_score + engine_score + weapon_score
+        if total == 0:
+            return "Unknown", 0
         
-        diff = abs(engine_pct - ground_pct)
+        ground_pct = ground_score / total
+        engine_pct = engine_score / total
+        weapon_pct = weapon_score / total
         
-        if diff < 0.15:
-            return "Hybrid"
-        elif engine_pct > ground_pct:
-            return "Rotational"
+        # Determine primary profile
+        max_score = max(ground_score, engine_score, weapon_score)
+        
+        # Calculate confidence (how dominant is the primary characteristic)
+        second_max = sorted([ground_score, engine_score, weapon_score])[-2]
+        confidence = int((max_score - second_max) / max_score * 100) if max_score > 0 else 50
+        confidence = max(60, min(95, confidence + 50))  # Bound between 60-95%
+        
+        # Classify based on highest component
+        if weapon_score == max_score and weapon_pct > 0.38:
+            profile = "Whipper"
+        elif engine_score == max_score and engine_pct > 0.36:
+            profile = "Spinner"
+        elif ground_score >= engine_score:
+            profile = "Slingshotter"
         else:
-            return "Linear"
+            profile = "Spinner"
+        
+        # Add Titan modifier for heavy players
+        if weight_lbs > 200:
+            profile = f"Titan-{profile}"
+        
+        return profile, confidence
     
     def calculate_all_scores(self, velocities: List[JointVelocities],
                             events: SwingEvents,
-                            kinetic_seq: KineticSequence) -> SwingScores:
+                            kinetic_seq: KineticSequence,
+                            weight_lbs: float = 160) -> SwingScores:
         """
         Calculate all scores for a swing
         
@@ -292,6 +320,7 @@ class ScoringEngine:
             velocities: List of JointVelocities
             events: SwingEvents
             kinetic_seq: KineticSequence
+            weight_lbs: Athlete weight in pounds
         
         Returns:
             SwingScores with all metrics
@@ -302,14 +331,14 @@ class ScoringEngine:
         engine_score, peak_torso = self.calculate_engine_score(velocities, events)
         weapon_score, peak_bat = self.calculate_weapon_score(velocities, events)
         
-        # Calculate transfer ratio
+        # Calculate transfer ratio (now as percentage)
         transfer_ratio = self.calculate_transfer_ratio(
             ground_score, engine_score, weapon_score
         )
         
-        # Classify motor profile
-        motor_profile = self.classify_motor_profile(
-            ground_score, engine_score, weapon_score
+        # Classify motor profile with confidence
+        motor_profile, confidence = self.classify_motor_profile(
+            ground_score, engine_score, weapon_score, weight_lbs
         )
         
         # Kinetic sequence quality
@@ -325,7 +354,8 @@ class ScoringEngine:
             peak_pelvis_velocity=peak_pelvis,
             peak_torso_velocity=peak_torso,
             peak_bat_velocity=peak_bat,
-            motor_profile=motor_profile
+            motor_profile=motor_profile,
+            motor_profile_confidence=confidence
         )
 
 
