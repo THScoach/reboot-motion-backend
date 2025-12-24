@@ -19,6 +19,9 @@ from sync_service import RebootMotionSync
 # Import CSV upload routes
 from csv_upload_routes import router as csv_router
 
+# Import Reboot Lite routes
+from reboot_lite_routes import router as reboot_lite_router
+
 # Import Priority 12 enhancement
 from priority_12_api_enhancement import enhance_analysis_with_priority_10_11
 
@@ -44,6 +47,9 @@ app.add_middleware(
 
 # Include CSV upload router
 app.include_router(csv_router, tags=["CSV Import"])
+
+# Include Reboot Lite router
+app.include_router(reboot_lite_router, tags=["Reboot Lite"])
 
 # Initialize database on startup
 @app.on_event("startup")
