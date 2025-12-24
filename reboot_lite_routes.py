@@ -31,6 +31,7 @@ from physics_engine.motor_profile_classifier import MotorProfileClassifier
 from physics_engine.tempo_calculator import calculate_tempo_score, calculate_tempo_from_events
 from physics_engine.stability_calculator import calculate_stability_score, analyze_stability_from_pose_frames
 from physics_engine.race_bar_formatter import format_kinetic_sequence_for_race_bar
+from physics_engine.bat_module import BatModule
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -226,9 +227,56 @@ async def analyze_swing_reboot_lite(
         logger.info(f"✅ Stability: grade={stability_score['grade']}, score={stability_score['stability_score']}")
         
         # ============================================================
-        # STEP 10: Assemble Complete Response
+        # STEP 10: BAT Optimization Analysis
         # ============================================================
-        logger.info("Step 10: Assembling final response...")
+        logger.info("Step 10: Analyzing bat optimization...")
+        
+        bat_module = BatModule()
+        
+        # Calculate body kinetic energy for transfer efficiency
+        body_ke = physics_metrics.get('rotational_ke', 0) + physics_metrics.get('translational_ke', 0)
+        
+        bat_optimization = bat_module.analyze_bat_optimization(
+            bat_weight_oz=float(bat_weight_oz),
+            bat_length_inches=33.0,  # Default, could be made a parameter
+            bat_speed_mph=physics_metrics.get('bat_speed', 0),
+            body_kinetic_energy=body_ke,
+            player_height_inches=height_inches,
+            player_weight_lbs=weight_lbs,
+            bat_type="balanced"
+        )
+        
+        # Format bat optimization for response
+        bat_analysis = {
+            'current_bat': {
+                'weight_oz': bat_optimization.current_bat['weight_oz'],
+                'length_inches': bat_optimization.current_bat['length_inches'],
+                'moi_kgm2': bat_optimization.current_bat['moi_kgm2'],
+                'bat_speed_mph': bat_optimization.current_bat['bat_speed_mph'],
+                'predicted_exit_velo_mph': bat_optimization.current_bat['predicted_exit_velo_mph']
+            },
+            'energy_transfer': {
+                'body_ke_joules': bat_optimization.body_kinetic_energy_joules,
+                'bat_ke_joules': bat_optimization.bat_kinetic_energy_joules,
+                'efficiency_percent': bat_optimization.transfer_efficiency_percent
+            },
+            'recommendations': {
+                'optimal_weight_range_oz': {
+                    'min': bat_optimization.optimal_weight_range_oz[0],
+                    'max': bat_optimization.optimal_weight_range_oz[1]
+                },
+                'test_weights': bat_optimization.recommended_weights,
+                'exit_velo_predictions': bat_optimization.exit_velo_predictions
+            },
+            'optimization_notes': bat_optimization.optimization_notes
+        }
+        
+        logger.info(f"✅ Bat optimization: {bat_optimization.transfer_efficiency_percent}% efficiency, optimal range {bat_optimization.optimal_weight_range_oz}")
+        
+        # ============================================================
+        # STEP 11: Assemble Complete Response
+        # ============================================================
+        logger.info("Step 11: Assembling final response...")
         
         response = {
             'session_id': f"rl_{player_id}_{int(datetime.now().timestamp())}",
@@ -267,6 +315,9 @@ async def analyze_swing_reboot_lite(
                 
                 # Stability Score
                 'stability': stability_score,
+                
+                # Bat Optimization
+                'bat_optimization': bat_analysis,
                 
                 # Kinetic Chain (raw events)
                 'kinetic_chain': {
@@ -322,3 +373,120 @@ async def health_check():
         "version": "1.0.0",
         "timestamp": datetime.now().isoformat()
     }
+
+
+@router.post("/optimize-bat")
+async def optimize_bat(
+    bat_weight_oz: float = Form(...),
+    bat_length_inches: float = Form(33.0),
+    bat_speed_mph: float = Form(...),
+    body_ke_joules: float = Form(...),
+    player_height_inches: int = Form(...),
+    player_weight_lbs: int = Form(...),
+    bat_model: Optional[str] = Form(None),
+    balance_point_inches: Optional[float] = Form(None),
+    bat_type: str = Form("balanced")
+):
+    """
+    Standalone bat optimization analysis
+    
+    Calculates optimal bat weight recommendations without requiring video upload.
+    Useful for players who already know their bat speed and body KE.
+    
+    Args:
+        bat_weight_oz: Current bat weight in ounces
+        bat_length_inches: Bat length in inches (default 33")
+        bat_speed_mph: Measured bat speed in mph
+        body_ke_joules: Body kinetic energy in joules
+        player_height_inches: Player height in inches
+        player_weight_lbs: Player weight in pounds
+        bat_model: Bat model name (optional)
+        balance_point_inches: Balance point from knob in inches (optional)
+        bat_type: Bat type - "balanced", "end_loaded", or "light" (default "balanced")
+    
+    Returns:
+        Bat optimization analysis with recommendations
+    
+    Example:
+        POST /api/reboot-lite/optimize-bat
+        {
+            "bat_weight_oz": 30,
+            "bat_length_inches": 33,
+            "bat_speed_mph": 82,
+            "body_ke_joules": 514,
+            "player_height_inches": 70,
+            "player_weight_lbs": 185,
+            "bat_model": "Louisville Slugger Prime",
+            "bat_type": "balanced"
+        }
+    """
+    try:
+        logger.info(f"Bat optimization request: {bat_weight_oz} oz, {bat_speed_mph} mph bat speed")
+        
+        # Initialize bat module
+        bat_module = BatModule()
+        
+        # Run analysis
+        optimization = bat_module.analyze_bat_optimization(
+            bat_weight_oz=bat_weight_oz,
+            bat_length_inches=bat_length_inches,
+            bat_speed_mph=bat_speed_mph,
+            body_kinetic_energy=body_ke_joules,
+            player_height_inches=player_height_inches,
+            player_weight_lbs=player_weight_lbs,
+            bat_model=bat_model,
+            balance_point_inches=balance_point_inches,
+            bat_type=bat_type
+        )
+        
+        # Format response
+        response = {
+            'timestamp': datetime.now().isoformat(),
+            'current_bat': {
+                'weight_oz': optimization.current_bat['weight_oz'],
+                'length_inches': optimization.current_bat['length_inches'],
+                'model': optimization.current_bat.get('model'),
+                'bat_type': optimization.current_bat.get('bat_type'),
+                'moi_kgm2': optimization.current_bat['moi_kgm2'],
+                'balance_point_inches': optimization.current_bat.get('balance_point_inches'),
+                'bat_speed_mph': optimization.current_bat['bat_speed_mph'],
+                'predicted_exit_velo_mph': optimization.current_bat['predicted_exit_velo_mph']
+            },
+            'energy_transfer': {
+                'body_ke_joules': optimization.body_kinetic_energy_joules,
+                'bat_ke_joules': optimization.bat_kinetic_energy_joules,
+                'efficiency_percent': optimization.transfer_efficiency_percent,
+                'rating': (
+                    'Elite (>110%)' if optimization.transfer_efficiency_percent >= 110
+                    else 'Excellent (100-110%)' if optimization.transfer_efficiency_percent >= 100
+                    else 'Good (80-100%)' if optimization.transfer_efficiency_percent >= 80
+                    else 'Needs Improvement (<80%)'
+                )
+            },
+            'recommendations': {
+                'optimal_weight_range_oz': {
+                    'min': optimization.optimal_weight_range_oz[0],
+                    'max': optimization.optimal_weight_range_oz[1]
+                },
+                'test_weights': optimization.recommended_weights,
+                'exit_velo_predictions': optimization.exit_velo_predictions,
+                'best_exit_velo': max(
+                    optimization.exit_velo_predictions,
+                    key=lambda x: x['exit_velo_mph']
+                )
+            },
+            'optimization_notes': optimization.optimization_notes,
+            'player_info': {
+                'height_inches': player_height_inches,
+                'weight_lbs': player_weight_lbs
+            }
+        }
+        
+        logger.info(f"✅ Bat optimization complete: {optimization.transfer_efficiency_percent}% efficiency")
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"❌ Error in bat optimization: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Bat optimization failed: {str(e)}")
+
