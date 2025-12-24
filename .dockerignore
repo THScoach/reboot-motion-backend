@@ -1,0 +1,45 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Testing
+tests/
+test_*.py
+*_test.py
+
+# Charts and reports (large files)
+charts/
+reports/
+
+# Temporary files
+*.tmp
+*.log
+.DS_Store
+
+# Media files (if any)
+*.mp4
+*.mov
+*.avi
+*.mkv
