@@ -15,9 +15,49 @@ Philosophy: "Your body has X capacity. Let's see how much you're using."
 import numpy as np
 
 
+def _apply_short_player_baseline_boost(baseline_bat_speed, height_inches):
+    """
+    V2.0.1: Baseline boost for extreme short players (<5'8").
+    
+    Problem: Lookup table underestimates short players who have:
+    - Lower rotational inertia (27% less for 5'6" vs 6'0")
+    - Higher relative strength (better force-to-mass ratio)
+    - Better coordination efficiency (shorter neural pathways)
+    
+    Physics basis: I_body ∝ M × r_gyration²
+    For short players: r_gyration = 0.30 × height (vs 0.35 for average)
+    
+    Args:
+        baseline_bat_speed: Initial bat speed from lookup table (mph)
+        height_inches: Player height in inches
+    
+    Returns:
+        Adjusted bat speed with short player boost applied
+    
+    Examples:
+        Altuve (5'6"): 58.0 mph → 64.96 mph (+12% boost)
+        Average (6'0"): 75.0 mph → 75.0 mph (no change)
+    """
+    SHORT_PLAYER_THRESHOLD = 68  # 5'8" in inches
+    SHORT_PLAYER_BOOST = 0.12    # +12% baseline boost
+    
+    if height_inches < SHORT_PLAYER_THRESHOLD:
+        original_speed = baseline_bat_speed
+        baseline_bat_speed *= (1 + SHORT_PLAYER_BOOST)
+        
+        # Optional: Print for debugging
+        # print(f"[V2.0.1 SHORT PLAYER BOOST] {height_inches}\" player: "
+        #       f"{original_speed:.1f} mph → {baseline_bat_speed:.1f} mph "
+        #       f"(+{SHORT_PLAYER_BOOST*100:.0f}%)")
+    
+    return baseline_bat_speed
+
+
 def calculate_energy_capacity(height_inches, wingspan_inches, weight_lbs, age, bat_weight_oz):
     """
     Calculate kinetic energy capacity from body specs.
+    
+    V2.0.1 UPDATE: Added short player baseline boost for <5'8" players
     
     Args:
         height_inches: Player height in inches
@@ -40,6 +80,9 @@ def calculate_energy_capacity(height_inches, wingspan_inches, weight_lbs, age, b
     
     # Step 1: Get baseline bat speed potential (mph) for 30oz bat
     baseline_bat_speed = _get_baseline_bat_speed(height_inches, weight_lbs, age)
+    
+    # Step 1.5: V2.0.1 - Apply short player boost (BEFORE other corrections)
+    baseline_bat_speed = _apply_short_player_baseline_boost(baseline_bat_speed, height_inches)
     
     # Step 2: Apply wingspan correction (MORE IMPORTANT than height)
     ape_index = wingspan_inches - height_inches
