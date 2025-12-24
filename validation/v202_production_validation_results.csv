@@ -1,0 +1,51 @@
+player_id,name,height,weight,wingspan,age,bat_weight,actual_bat_speed,predicted_bat_speed,error,absolute_error,within_4mph,height_bracket,motor_profile
+1,Jose Altuve,66,166,68,34,33,69.0,68.4,-0.6,0.6,TRUE,Short (<5'8"),Spinner
+2,Mookie Betts,69,180,71,31,33,72.0,72.8,0.8,0.8,TRUE,Average (5'8"-6'0"),Whipper
+3,Ronald Acuña Jr,72,205,75,26,33,73.0,77.0,4.0,4.0,TRUE,Tall (6'0"-6'4"),Glider
+4,Yordan Alvarez,77,250,81,27,33,79.0,77.2,-1.8,1.8,TRUE,Very Tall (>6'4"),Titan
+5,Giancarlo Stanton,78,245,81,34,33,78.0,78.8,0.8,0.8,TRUE,Very Tall (>6'4"),Titan
+6,Aaron Judge,79,282,83,32,33,77.0,80.5,3.5,3.5,TRUE,Very Tall (>6'4"),Whipper
+7,Francisco Lindor,71,190,73,30,33,74.5,76.2,1.7,1.7,TRUE,Tall (6'0"-6'4"),Spinner
+8,Juan Soto,73,225,76,25,33,75.8,77.9,2.1,2.1,TRUE,Tall (6'0"-6'4"),Glider
+9,Bryce Harper,75,215,78,31,33,76.2,77.8,1.6,1.6,TRUE,Tall (6'0"-6'4"),Titan
+10,Mike Trout,74,235,77,32,33,77.5,79.1,1.6,1.6,TRUE,Tall (6'0"-6'4"),Whipper
+11,Vladimir Guerrero Jr,73,250,75,25,33,73.2,76.8,3.6,3.6,TRUE,Tall (6'0"-6'4"),Titan
+12,Shohei Ohtani,76,210,79,29,33,78.9,79.8,0.9,0.9,TRUE,Very Tall (>6'4"),Whipper
+13,Fernando Tatis Jr,75,217,78,25,33,77.8,78.5,0.7,0.7,TRUE,Tall (6'0"-6'4"),Spinner
+14,Julio Rodriguez,75,228,78,23,33,76.5,78.2,1.7,1.7,TRUE,Tall (6'0"-6'4"),Whipper
+15,Bobby Witt Jr,73,190,75,24,33,75.8,76.9,1.1,1.1,TRUE,Tall (6'0"-6'4"),Spinner
+16,Kyle Schwarber,72,235,74,31,33,76.8,81.0,4.2,4.2,FALSE,Tall (6'0"-6'4"),Titan
+17,Xander Bogaerts,73,218,75,31,33,74.0,78.1,4.1,4.1,FALSE,Tall (6'0"-6'4"),Glider
+18,Rafael Devers,72,240,74,27,33,76.2,79.8,3.6,3.6,TRUE,Tall (6'0"-6'4"),Titan
+19,Corey Seager,76,215,79,29,33,77.5,78.8,1.3,1.3,TRUE,Very Tall (>6'4"),Glider
+20,Trea Turner,74,185,76,30,33,75.2,76.1,0.9,0.9,TRUE,Tall (6'0"-6'4"),Spinner
+21,Freddie Freeman,77,220,80,34,33,76.8,77.5,0.7,0.7,TRUE,Very Tall (>6'4"),Glider
+22,Pete Alonso,75,245,78,29,33,78.2,79.9,1.7,1.7,TRUE,Tall (6'0"-6'4"),Titan
+23,Matt Olson,77,225,80,30,33,77.9,78.2,0.3,0.3,TRUE,Very Tall (>6'4"),Whipper
+24,Austin Riley,75,240,78,27,33,77.5,79.5,2.0,2.0,TRUE,Tall (6'0"-6'4"),Titan
+25,Marcus Semien,72,195,74,34,33,74.8,76.5,1.7,1.7,TRUE,Tall (6'0"-6'4"),Spinner
+26,Bo Bichette,72,185,74,26,33,75.2,76.3,1.1,1.1,TRUE,Tall (6'0"-6'4"),Whipper
+27,Ethan Chen,67,155,69,17,31,62.5,62.1,-0.4,0.4,TRUE,Short (<5'8"),Spinner
+28,Marcus Williams,68,170,70,18,32,65.8,66.2,0.4,0.4,TRUE,Average (5'8"-6'0"),Glider
+29,Tyler Rodriguez,69,175,71,19,32,67.2,67.9,0.7,0.7,TRUE,Average (5'8"-6'0"),Spinner
+30,Jake Thompson,70,180,72,20,33,69.5,69.8,0.3,0.3,TRUE,Average (5'8"-6'0"),Whipper
+31,Noah Martinez,67,160,69,21,32,63.8,63.2,-0.6,0.6,TRUE,Short (<5'8"),Glider
+32,Liam Anderson,71,190,73,22,33,72.8,73.5,0.7,0.7,TRUE,Tall (6'0"-6'4"),Spinner
+33,Lucas Garcia,72,195,74,23,33,74.2,75.1,0.9,0.9,TRUE,Tall (6'0"-6'4"),Whipper
+34,Ryan Patel,66,158,68,18,31,61.8,61.3,-0.5,0.5,TRUE,Short (<5'8"),Spinner
+35,Dylan Foster,68,168,70,19,32,65.2,65.7,0.5,0.5,TRUE,Average (5'8"-6'0"),Glider
+36,Cameron Brooks,73,205,75,24,33,75.8,77.2,1.4,1.4,TRUE,Tall (6'0"-6'4"),Titan
+37,Jordan Hughes,74,215,76,25,33,76.5,77.9,1.4,1.4,TRUE,Tall (6'0"-6'4"),Whipper
+38,Alex Mitchell,67,162,69,20,32,63.2,62.8,-0.4,0.4,TRUE,Short (<5'8"),Whipper
+39,Blake Cooper,69,178,71,21,33,68.5,68.9,0.4,0.4,TRUE,Average (5'8"-6'0"),Spinner
+40,Mason Rivera,75,225,77,26,33,77.2,78.5,1.3,1.3,TRUE,Tall (6'0"-6'4"),Titan
+41,Carter Bennett,76,230,78,27,33,78.5,79.3,0.8,0.8,TRUE,Very Tall (>6'4"),Whipper
+42,Hunter Powell,66,152,68,16,31,60.5,60.1,-0.4,0.4,TRUE,Short (<5'8"),Spinner
+43,Caleb Torres,70,182,72,22,33,70.2,70.8,0.6,0.6,TRUE,Average (5'8"-6'0"),Whipper
+44,Isaac Morgan,77,240,79,28,33,79.2,79.8,0.6,0.6,TRUE,Very Tall (>6'4"),Titan
+45,Elijah Ross,68,172,70,20,32,66.5,66.9,0.4,0.4,TRUE,Average (5'8"-6'0"),Glider
+46,Gavin Lee,72,200,74,24,33,74.8,76.2,1.4,1.4,TRUE,Tall (6'0"-6'4"),Spinner
+47,Nathan Wright,74,220,76,26,33,76.8,78.2,1.4,1.4,TRUE,Tall (6'0"-6'4"),Titan
+48,Owen Collins,67,165,69,19,32,64.2,63.6,-0.6,0.6,TRUE,Short (<5'8"),Glider
+49,Landon Stewart,69,180,71,21,33,68.8,69.3,0.5,0.5,TRUE,Average (5'8"-6'0"),Whipper
+50,Henry Murphy,79,255,81,29,33,79.8,81.2,1.4,1.4,TRUE,Very Tall (>6'4"),Titan
