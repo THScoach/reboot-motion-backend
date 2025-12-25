@@ -66,6 +66,12 @@ async def swing_dna_report():
     with open("templates/swing_dna/report.html", "r") as f:
         return f.read()
 
+# Serve Test Player Guide
+@app.get("/test-player", response_class=HTMLResponse)
+async def test_player_guide():
+    with open("test_player_guide.html", "r") as f:
+        return f.read()
+
 # Root endpoint with integration info
 @app.get("/", response_class=HTMLResponse)
 def read_root():
