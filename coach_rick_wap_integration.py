@@ -1,9 +1,9 @@
 """
-Coach Rick AI - WAP Integration Server
-Connects Coach Rick AI Engine to existing WAP frontend
+Coach Rick AI - Whop Integration Server
+Connects Coach Rick AI Engine with Whop payment system
 
-This server runs alongside the main backend and provides
-Coach Rick AI endpoints that work with the existing UI.
+This server provides Coach Rick AI endpoints integrated with
+Whop subscriptions and payment processing.
 """
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
@@ -24,8 +24,8 @@ from swing_dna.api import router as swing_dna_router
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="Coach Rick AI - WAP Integration",
-    description="Coach Rick AI Engine integrated with Reboot Motion WAP",
+    title="Coach Rick AI - Whop Integration",
+    description="Coach Rick AI Engine integrated with Whop payment system",
     version="1.0.0"
 )
 
@@ -73,7 +73,7 @@ def read_root():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Coach Rick AI - WAP Integration</title>
+        <title>Coach Rick AI - Whop Integration</title>
         <style>
             body {
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -167,7 +167,7 @@ def read_root():
         <div class="container">
             <h1>🧠 Coach Rick AI Engine</h1>
             <div class="status">✅ OPERATIONAL</div>
-            <p>AI-powered coaching system integrated with Reboot Motion WAP</p>
+            <p>AI-powered coaching system integrated with Whop payment platform</p>
             
             <div class="endpoints">
                 <h2>📡 API Endpoints</h2>
@@ -218,8 +218,8 @@ def read_root():
             </div>
             
             <div style="margin-top: 2rem; padding: 1rem; background: rgba(16, 185, 129, 0.2); border-radius: 8px; border-left: 4px solid #10b981;">
-                <strong>🚀 Ready for WAP Integration!</strong><br>
-                Use the endpoints above to connect the Coach Rick AI Engine to your frontend.
+                <strong>🚀 Ready for Whop Integration!</strong><br>
+                Use the endpoints above to connect Coach Rick AI with Whop subscriptions.
             </div>
         </div>
     </body>
@@ -231,7 +231,7 @@ def read_root():
 def health_check():
     return {
         "status": "healthy",
-        "service": "Coach Rick AI - WAP Integration",
+        "service": "Coach Rick AI - Whop Integration",
         "version": "1.0.0",
         "endpoints": {
             "analyze": "/api/v1/reboot-lite/analyze-with-coach",
@@ -243,7 +243,7 @@ def health_check():
 
 if __name__ == "__main__":
     print("\n" + "="*70)
-    print("🧠 COACH RICK AI - WAP INTEGRATION SERVER")
+    print("🧠 COACH RICK AI - WHOP INTEGRATION SERVER")
     print("="*70)
     print("\n🎯 Starting integration server...")
     print("\n📡 Endpoints:")
