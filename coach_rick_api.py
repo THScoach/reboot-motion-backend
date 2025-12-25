@@ -76,7 +76,7 @@ class PrescriptionResponse(BaseModel):
     drills: List[DrillResponse]
     duration_weeks: int
     expected_gains: str
-    weekly_schedule: Dict[str, List[str]]
+    weekly_schedule: Dict[str, List[Dict]]  # Changed from List[str] to List[Dict]
 
 
 class CoachMessagesResponse(BaseModel):
@@ -229,30 +229,37 @@ async def analyze_swing_with_coach(
         # ====================================================================
         prescription_engine = DrillPrescriptionEngine()
         
-        prescription_result = prescription_engine.prescribe_drills(
-            motor_profile=motor_profile.type,
-            patterns=detected_patterns
-        )
-        
-        # Convert to response model
-        drills = [
-            DrillResponse(
-                drill_id=d['drill_id'],
-                name=d['name'],
-                category=d['category'],
-                volume=d['volume'],
-                frequency=d['frequency'],
-                key_cues=d['key_cues']
+        # Use the primary pattern for prescription
+        if pattern_matches:
+            prescription_obj = prescription_engine.prescribe(pattern_matches[0])
+            
+            # Convert to response model
+            drills = [
+                DrillResponse(
+                    drill_id=drill['drill_id'],
+                    name=drill['drill_name'],  # Use drill_name from knowledge base
+                    category=drill['category'],
+                    volume=drill['volume'],
+                    frequency=drill['frequency'],
+                    key_cues=drill['coaching_cues']  # Use coaching_cues from knowledge base
+                )
+                for drill in prescription_obj.drills
+            ]
+            
+            prescription = PrescriptionResponse(
+                drills=drills,
+                duration_weeks=prescription_obj.duration_weeks,
+                expected_gains=prescription_obj.expected_gains,
+                weekly_schedule=prescription_obj.weekly_schedule
             )
-            for d in prescription_result['drills']
-        ]
-        
-        prescription = PrescriptionResponse(
-            drills=drills,
-            duration_weeks=prescription_result['duration_weeks'],
-            expected_gains=prescription_result['expected_gains'],
-            weekly_schedule=prescription_result['weekly_schedule']
-        )
+        else:
+            # No patterns detected - provide general training
+            prescription = PrescriptionResponse(
+                drills=[],
+                duration_weeks=2,
+                expected_gains="Maintain current performance with consistent training",
+                weekly_schedule={}
+            )
         
         # ====================================================================
         # STEP 5: COACH RICK AI MESSAGES
