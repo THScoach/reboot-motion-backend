@@ -1,0 +1,256 @@
+{
+  "athlete": {
+    "name": "Eric Williams",
+    "handedness": "RHH",
+    "age": 24,
+    "position": "OF"
+  },
+  "metrics": {
+    "lead_knee_angle": 0.3,
+    "hip_angular_momentum": 2.10,
+    "shoulder_angular_momentum": 18.25,
+    "shoulder_hip_ratio": 8.68,
+    "bat_speed": 82.0,
+    "timing_gap_ms": 158.3,
+    "lead_arm_extension": 1.5,
+    "vertical_grf_estimate": 0.8
+  },
+  "pattern": {
+    "type": "PATTERN_1_KNEE_LEAK",
+    "severity": "CRITICAL",
+    "title": "Energy Leak at Lead Knee",
+    "description": "Your lead knee is flexed at 0.3° (should be 160-180°). This absorbs 99.8% of your ground force before it reaches your hips. Result: Weak hip contribution (2.10 vs target 8-10+) and shoulder compensation (8.68x vs target 0.7-1.5x).",
+    "root_cause": "Coordination issue - lead knee flexing instead of extending",
+    "primary_protocol": "PROTOCOL_1",
+    "secondary_protocol": "PROTOCOL_2"
+  },
+  "efficiency": {
+    "hip_efficiency": 21.0,
+    "knee_efficiency": 0.2,
+    "contact_efficiency": 7.5,
+    "total_efficiency": 11.2
+  },
+  "ball_outcomes": {
+    "current": {
+      "exit_velo": 82.0,
+      "launch_angle": 2,
+      "gb_rate": 65,
+      "ld_rate": 25,
+      "fb_rate": 10,
+      "breaking_ball_avg": 0.180,
+      "opposite_field_avg": 0.150,
+      "spray_chart": {
+        "pull_pct": 60,
+        "center_pct": 25,
+        "oppo_pct": 15
+      },
+      "spin_rate": 2800,
+      "spin_type": "topspin"
+    },
+    "predicted": {
+      "exit_velo": 89.0,
+      "launch_angle": 15,
+      "gb_rate": 35,
+      "ld_rate": 55,
+      "fb_rate": 10,
+      "breaking_ball_avg": 0.280,
+      "opposite_field_avg": 0.240,
+      "spray_chart": {
+        "pull_pct": 40,
+        "center_pct": 35,
+        "oppo_pct": 25
+      },
+      "spin_rate": -1200,
+      "spin_type": "backspin"
+    },
+    "improvement": {
+      "exit_velo_gain": 7.0,
+      "launch_angle_gain": 13,
+      "gb_rate_change": -30,
+      "ld_rate_change": 30,
+      "fb_rate_change": 0,
+      "breaking_ball_avg_gain": 0.100,
+      "opposite_field_avg_gain": 0.090
+    }
+  },
+  "training_plan": {
+    "total_weeks": 6,
+    "primary_issue": "Energy Leak at Lead Knee",
+    "protocols_used": ["PROTOCOL_1", "PROTOCOL_2", "PROTOCOL_5"],
+    "weeks": [
+      {
+        "week": "1-2",
+        "focus": "Fix Lead Knee Leak",
+        "frequency": "Daily",
+        "session_duration": "20-30 minutes",
+        "drills": [
+          {
+            "name": "Single-Leg Isometric Holds",
+            "sets": 3,
+            "reps": "20s",
+            "rest": "60s",
+            "intensity": "Moderate",
+            "cue": "Steel rod, not shock absorber",
+            "description": "Stand on lead leg, knee at 160-170°. Push through ball of foot, engage quad + glute.",
+            "equipment": ["None"],
+            "progression": "Increase hold time to 30s by Week 2"
+          },
+          {
+            "name": "Single-Leg Vertical Jumps",
+            "sets": 3,
+            "reps": 5,
+            "rest": "90s",
+            "intensity": "High",
+            "cue": "Lock it on landing, don't collapse",
+            "description": "Jump vertically off lead leg only. Land with knee 160-180° (stiff landing). Stick landing 2 seconds.",
+            "equipment": ["None"],
+            "progression": "Increase jump height and landing control"
+          },
+          {
+            "name": "Wall Knee Extension Drill",
+            "sets": 3,
+            "reps": 10,
+            "rest": "60s",
+            "intensity": "Moderate",
+            "cue": "Push down, knee locks",
+            "description": "Back against wall, lead foot 12\" forward. Push through ball of foot → extend knee. Feel quad + glute activate simultaneously.",
+            "equipment": ["Wall"],
+            "progression": "Add resistance band around thigh"
+          }
+        ],
+        "expected_change": "Lead knee 0.3° → 140-160° at contact",
+        "downstream_effect": "Hip angmom ↑ by 2-3x (2.10 → 4-5)",
+        "validation_test": "Video swing analysis - measure lead knee angle at contact"
+      },
+      {
+        "week": "3-4",
+        "focus": "Add Vertical Ground Force",
+        "frequency": "5 days/week",
+        "session_duration": "30-40 minutes",
+        "drills": [
+          {
+            "name": "Force Pedals (Soft)",
+            "sets": 3,
+            "reps": "10 swings",
+            "rest": "120s",
+            "intensity": "Moderate",
+            "cue": "Feel the bounce, push through it",
+            "description": "Soft hexagonal foam platform under ball of lead foot. Start with dry swings, progress to tee work.",
+            "equipment": ["Force Pedals (soft)"],
+            "progression": "Week 3: Dry swings, Week 4: Tee work"
+          },
+          {
+            "name": "Lead Leg Slam → Swing",
+            "sets": 3,
+            "reps": 10,
+            "rest": "90s",
+            "intensity": "High",
+            "cue": "Slam, brake hip, whip bat",
+            "description": "Stand on lead leg. SLAM foot down (vertical push). Immediately load and swing. Feel hip decelerate after slam.",
+            "equipment": ["Bat"],
+            "progression": "Add resistance band for added force"
+          },
+          {
+            "name": "Medicine Ball Rotational Throws",
+            "sets": 3,
+            "reps": 8,
+            "rest": "120s",
+            "intensity": "High",
+            "cue": "Hip brake, torso GO",
+            "description": "Simulate swing motion with 8-10lb med ball. Focus: Hip stops → Torso continues → Ball releases. Feel hip deceleration create stretch.",
+            "equipment": ["Medicine ball (8-10 lbs)"],
+            "progression": "Increase ball weight to 12 lbs"
+          }
+        ],
+        "expected_change": "Hip angmom 4-5 → 6-8, Shoulder/Hip ratio 8.68x → 3-4x",
+        "downstream_effect": "vGRF 0.8x → 1.2-1.5x bodyweight, Hip deceleration capability ↑",
+        "validation_test": "Track hip angular momentum in follow-up analysis"
+      },
+      {
+        "week": "5-6",
+        "focus": "Integrate to Live Swings",
+        "frequency": "5 days/week",
+        "session_duration": "45-60 minutes",
+        "drills": [
+          {
+            "name": "Force Pedals + Soft Toss (Firm)",
+            "sets": 3,
+            "reps": "15 swings",
+            "rest": "180s",
+            "intensity": "Game-speed",
+            "cue": "Push, extend, whip",
+            "description": "Firm pedal under lead foot. Live ball contact (soft toss from front). Focus: Vertical push → Extension → Whip.",
+            "equipment": ["Force Pedals (firm)", "Balls"],
+            "progression": "Increase pitch velocity"
+          },
+          {
+            "name": "Dr. Kwon Rope Swings",
+            "sets": 3,
+            "reps": 20,
+            "rest": "90s",
+            "intensity": "Moderate",
+            "cue": "Hips, torso, arms, THEN rope",
+            "description": "Rope attached to bat handle (3-4 feet). Swing rope → forces sequential acceleration. Feel 'lag' (rope lags behind body rotation).",
+            "equipment": ["Rope", "Bat"],
+            "progression": "Add weighted rope"
+          },
+          {
+            "name": "Constraint Soft Toss",
+            "sets": 3,
+            "reps": 20,
+            "rest": "120s",
+            "intensity": "Game-speed",
+            "cue": "Lead arm stretches to ball",
+            "description": "Ball placed at contact point on tee. Must extend lead arm to reach ball. Can't pull across (ball will be missed).",
+            "equipment": ["Tee", "Balls"],
+            "progression": "Move to front toss, then live BP"
+          }
+        ],
+        "expected_change": "Pattern transfers to live swings, ball outcomes improve",
+        "downstream_effect": "Exit velo 82 → 88-91 mph, Launch angle 2° → 12-18°, GB% 65% → 35%",
+        "validation_test": "Game stats tracking - exit velo, launch angle, batted ball distribution"
+      }
+    ]
+  },
+  "coach_take": "Your ground forces and timing are elite. But here's the issue: your lead leg isn't extending through the pitch plane — it's only at 0.3° (needs to be 160-180°). This causes you to pull the bat across instead of extending through, forcing your shoulders to over-rotate (8.68x, should be 0.7-1.5x).\n\nThe result? A drag pattern with zero late whip, losing 5-9 mph and causing you to roll over breaking balls.\n\n**The Fix:** Teach your front leg to LOCK and create vertical bounce. We'll use single-leg jumps to train your lead knee extension, Force Pedals to create vertical ground force, and rope swings to restore your bat whip.\n\n**Expected Results (6 weeks):**\n• Exit Velo: 82 → 89 mph (+7 mph)\n• Launch Angle: 2° → 15° (ground balls → line drives)\n• Breaking Ball AVG: .180 → .280\n• Hip Contribution: 2.1 → 8-10+ angular momentum\n• Line Drive Rate: 25% → 55%\n\nYou have all the ingredients. Now we just need to fix the knee leak so your hips can do their job.",
+  "overall_score": 60.3,
+  "breakdown_scores": {
+    "ground_flow": 72,
+    "engine_flow": 61,
+    "weapon": 48,
+    "transfer_ratio": 0.42
+  },
+  "detailed_breakdown": {
+    "ground_flow": {
+      "stance": 85,
+      "load": 81,
+      "stride": 73,
+      "plant": 60
+    },
+    "engine_flow": {
+      "pelvis_coil": 72,
+      "hip_separation": 48,
+      "torso_lag": 42,
+      "sequencing": 65,
+      "deceleration": 75
+    },
+    "weapon": {
+      "bat_path": 45,
+      "attack_angle": 52,
+      "bat_speed": 78,
+      "contact": 45
+    }
+  },
+  "tempo": {
+    "load_time": 0.48,
+    "launch_time": 0.15,
+    "ratio": 3.2,
+    "assessment": "Elite timing"
+  },
+  "motor_profile": {
+    "type": "Spinner",
+    "match_percentage": 89,
+    "weakness": "Lead arm not extending",
+    "strength": "Good ground force generation"
+  }
+}
