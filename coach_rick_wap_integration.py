@@ -15,6 +15,10 @@ import uvicorn
 # Import Coach Rick API router
 from coach_rick_api import router as coach_rick_router
 
+# Import Whop integration
+from whop_webhooks import router as whop_webhook_router
+from whop_middleware import router as whop_subscription_router
+
 # Initialize FastAPI app
 app = FastAPI(
     title="Coach Rick AI - WAP Integration",
@@ -33,6 +37,10 @@ app.add_middleware(
 
 # Include Coach Rick AI router
 app.include_router(coach_rick_router, tags=["Coach Rick AI"])
+
+# Include Whop routers
+app.include_router(whop_webhook_router, tags=["Whop Webhooks"])
+app.include_router(whop_subscription_router, tags=["Whop Subscription"])
 
 # Serve the Coach Rick UI
 @app.get("/coach-rick-ui", response_class=HTMLResponse)
