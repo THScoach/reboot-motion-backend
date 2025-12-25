@@ -118,7 +118,7 @@ class CoachRickTakeGenerator:
         Returns:
             Complete coach take
         """
-        pattern_key = pattern.pattern
+        pattern_key = pattern.type
         
         # Opening
         opening = self._get_opening(pattern_key)

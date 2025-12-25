@@ -64,10 +64,10 @@ class BallOutcomePredictor:
     ) -> Dict:
         """Calculate current ball outcomes"""
         
-        # Exit velocity based on bat speed and efficiency
+        # Exit velocity - use bat speed directly as baseline
+        # (In reality, exit velo ≈ bat speed for solid contact)
         bat_speed = metrics.bat_speed
-        total_eff = efficiency.total_efficiency / 100.0
-        exit_velo = bat_speed * total_eff
+        exit_velo = bat_speed  # Current exit velocity equals bat speed
         
         # Launch angle based on lead arm extension
         arm_ext = metrics.lead_arm_extension
@@ -146,11 +146,10 @@ class BallOutcomePredictor:
         
         bat_speed = metrics.bat_speed
         
-        # Target efficiency after training (80-90%)
-        target_efficiency = 0.85
-        
-        # Predicted exit velocity
-        predicted_exit_velo = bat_speed * target_efficiency
+        # Predicted exit velocity based on improved efficiency
+        # With proper mechanics, gain 5-10% more bat speed transfer to ball
+        efficiency_improvement = (85 - efficiency.total_efficiency) / 100.0
+        predicted_exit_velo = bat_speed + (bat_speed * efficiency_improvement * 0.10)
         
         # Predicted optimal outcomes
         predicted_la = 15  # Optimal line drive angle
@@ -283,7 +282,7 @@ def predict_ball_outcomes(metrics, efficiency, pattern=None) -> Dict:
         efficiency = EfficiencyScores(**efficiency)
     
     predictor = BallOutcomePredictor()
-    outcomes = predictor.predict(metrics, efficiency, pattern)
+    outcomes = predictor.predict(metrics, efficiency)
     
     return {
         'current': outcomes.current,

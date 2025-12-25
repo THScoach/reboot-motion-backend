@@ -187,7 +187,7 @@ class TrainingPlanGenerator:
         # Create training plan
         return TrainingPlan(
             athlete_name=athlete_name,
-            pattern=pattern.pattern,
+            pattern=pattern.type,
             severity=pattern.severity,
             primary_issue=pattern.root_cause,
             protocols_used=[primary_protocol_key] + ([secondary_protocol_key] if secondary_protocol_key else []),
