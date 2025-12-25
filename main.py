@@ -22,6 +22,9 @@ from csv_upload_routes import router as csv_router
 # Import Reboot Lite routes
 from reboot_lite_routes import router as reboot_lite_router
 
+# Import Coach Rick AI routes
+from coach_rick_api import router as coach_rick_router
+
 # Import Priority 12 enhancement
 from priority_12_api_enhancement import enhance_analysis_with_priority_10_11
 
@@ -50,6 +53,9 @@ app.include_router(csv_router, tags=["CSV Import"])
 
 # Include Reboot Lite router
 app.include_router(reboot_lite_router, tags=["Reboot Lite"])
+
+# Include Coach Rick AI router
+app.include_router(coach_rick_router, tags=["Coach Rick AI"])
 
 # Initialize database on startup
 @app.on_event("startup")
@@ -91,6 +97,8 @@ def read_root():
             "reboot_data_export": "POST /reboot/data-export?session_id={uuid}",
             "csv_upload": "POST /upload-reboot-csv (fallback for Reboot API)",
             "csv_upload_info": "GET /csv-upload-info",
+            "coach_rick_ai": "POST /api/v1/reboot-lite/analyze-with-coach (NEW)",
+            "coach_rick_health": "GET /api/v1/reboot-lite/coach-rick/health",
             "sync_status": "/sync/status",
             "docs": "/docs"
         }
