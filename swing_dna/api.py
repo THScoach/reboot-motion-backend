@@ -263,7 +263,7 @@ async def list_protocols():
         protocols_summary[key] = {
             "name": protocol["name"],
             "indication": protocol["indication"],
-            "timeline": protocol["timeline"],
+            "duration_weeks": protocol.get("duration_weeks", len(protocol["weeks"])),
             "total_weeks": len(protocol["weeks"]),
             "primary_focus": protocol["weeks"][0]["focus"] if protocol["weeks"] else "N/A"
         }

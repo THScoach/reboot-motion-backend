@@ -1,0 +1,6 @@
+timestamp,hip_angular_momentum,shoulder_angular_momentum,shoulder_hip_ratio,timing_gap_ms,vertical_grf_estimate,bat_speed
+0.000,2.10,18.25,8.68,158.3,0.8,82.0
+0.050,1.95,17.80,9.13,155.2,0.75,80.5
+0.100,2.25,18.50,8.22,160.1,0.85,83.2
+0.150,2.05,18.00,8.78,157.5,0.82,81.8
+0.200,2.15,18.40,8.56,159.0,0.78,82.3
