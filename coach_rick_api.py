@@ -11,6 +11,7 @@ Status: Phase 4 - Unified API
 """
 
 import os
+import sys
 import uuid
 from datetime import datetime
 from typing import Optional, List, Dict
@@ -332,10 +333,54 @@ async def analyze_swing_with_coach(
         )
         
         # ====================================================================
-        # STEP 7: SAVE TO DATABASE (Optional)
+        # STEP 7: SAVE TO DATABASE
         # ====================================================================
-        # In production, save to coach_rick_analyses table
-        # await _save_to_database(response, player_id)
+        # Transform Coach Rick response to PlayerReport and save
+        try:
+            from data_transformer import transform_to_player_report
+            from session_storage import save_session, create_or_update_player
+            import uuid as uuid_lib
+            
+            # Generate or use existing player_id
+            if not player_id:
+                player_id = f"player_{uuid_lib.uuid4().hex[:8]}"
+            
+            # Create/update player record
+            create_or_update_player(
+                player_id=player_id,
+                name=player_name,
+                age=age,
+                height_inches=height_inches,
+                weight_lbs=weight_lbs,
+                wingspan_inches=wingspan_inches,
+            )
+            
+            # Get session count for this player
+            from session_storage import get_player_progress
+            progress = get_player_progress(player_id)
+            session_count = progress['total_sessions'] + 1 if progress else 1
+            
+            # Transform Coach Rick response to PlayerReport
+            player_report = transform_to_player_report(
+                coach_rick_response=response.dict(),
+                player_info={
+                    'player_id': player_id,
+                    'name': player_name,
+                    'age': age,
+                    'height_inches': height_inches,
+                    'weight_lbs': weight_lbs,
+                    'wingspan_inches': wingspan_inches,
+                },
+                session_count=session_count
+            )
+            
+            # Save to database
+            saved_session_id = save_session(player_report)
+            print(f"✅ Saved session to database: {saved_session_id}", file=sys.stderr)
+            
+        except Exception as db_error:
+            # Log error but don't fail the request
+            print(f"⚠️  Database save failed (non-critical): {db_error}", file=sys.stderr)
         
         return response
         

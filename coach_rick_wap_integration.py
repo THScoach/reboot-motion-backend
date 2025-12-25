@@ -37,6 +37,10 @@ print("✓ Imported whop_middleware", file=sys.stderr)
 from swing_dna.api import router as swing_dna_router
 print("✓ Imported swing_dna.api", file=sys.stderr)
 
+# Import Session API
+from session_api import router as session_router
+print("✓ Imported session_api", file=sys.stderr)
+
 print("All imports successful!", file=sys.stderr)
 
 # Initialize FastAPI app
@@ -70,6 +74,10 @@ print("✓ Mounted whop_subscription_router", file=sys.stderr)
 # Include Swing DNA router
 app.include_router(swing_dna_router, tags=["Swing DNA"])
 print("✓ Mounted swing_dna_router", file=sys.stderr)
+
+# Include Session API router
+app.include_router(session_router, tags=["Sessions & Progress"])
+print("✓ Mounted session_router", file=sys.stderr)
 
 print("=" * 70, file=sys.stderr)
 print("✅ ALL ROUTERS MOUNTED SUCCESSFULLY", file=sys.stderr)
