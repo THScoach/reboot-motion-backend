@@ -26,6 +26,18 @@ class PatternDiagnosis:
     root_cause: str  # Root cause explanation
     primary_protocol: str  # Primary intervention protocol
     secondary_protocol: str  # Secondary protocol (optional)
+    
+    def to_dict(self) -> Dict:
+        """Convert to dictionary"""
+        return {
+            'type': self.type,
+            'severity': self.severity,
+            'title': self.title,
+            'description': self.description,
+            'root_cause': self.root_cause,
+            'primary_protocol': self.primary_protocol,
+            'secondary_protocol': self.secondary_protocol
+        }
 
 
 class PatternRecognizer:

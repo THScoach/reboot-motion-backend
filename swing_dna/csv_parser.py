@@ -69,24 +69,31 @@ class CSVParser:
     
     def parse_files(
         self, 
-        momentum_file_path: str, 
-        kinematics_file_path: str,
+        momentum_file_path, 
+        kinematics_file_path,
         handedness: str = 'RHH'
     ) -> SwingMetrics:
         """
         Parse both CSV files and extract metrics
         
         Args:
-            momentum_file_path: Path to momentum-energy.csv
-            kinematics_file_path: Path to inverse-kinematics.csv
+            momentum_file_path: Path to momentum-energy.csv OR pandas DataFrame
+            kinematics_file_path: Path to inverse-kinematics.csv OR pandas DataFrame
             handedness: 'RHH' (right-handed) or 'LHH' (left-handed)
             
         Returns:
             SwingMetrics object with extracted values
         """
-        # Load CSV files
-        momentum_df = pd.read_csv(momentum_file_path)
-        kinematics_df = pd.read_csv(kinematics_file_path)
+        # Load CSV files (support both file paths and DataFrames)
+        if isinstance(momentum_file_path, pd.DataFrame):
+            momentum_df = momentum_file_path
+        else:
+            momentum_df = pd.read_csv(momentum_file_path)
+            
+        if isinstance(kinematics_file_path, pd.DataFrame):
+            kinematics_df = kinematics_file_path
+        else:
+            kinematics_df = pd.read_csv(kinematics_file_path)
         
         # Validate required columns
         self._validate_columns(momentum_df, kinematics_df)
@@ -294,16 +301,40 @@ class CSVParser:
             return 0.8  # Weak vertical force
     
     def to_dict(self, metrics: SwingMetrics) -> Dict:
-        """Convert SwingMetrics to dictionary"""
+        """Convert SwingMetrics to dictionary with all required fields"""
         return {
-            'lead_knee_angle': metrics.lead_knee_angle,
-            'hip_angular_momentum': metrics.hip_angular_momentum,
-            'shoulder_angular_momentum': metrics.shoulder_angular_momentum,
-            'shoulder_hip_ratio': metrics.shoulder_hip_ratio,
-            'bat_speed': metrics.bat_speed,
-            'timing_gap_ms': metrics.timing_gap_ms,
-            'lead_arm_extension': metrics.lead_arm_extension,
-            'vertical_grf_estimate': metrics.vertical_grf_estimate
+            # Frame data
+            'contact_frame': int(metrics.contact_frame),
+            'total_frames': int(metrics.total_frames),
+            
+            # Knee metrics
+            'lead_knee_angle': float(metrics.lead_knee_angle),
+            
+            # Hip metrics
+            'hip_angular_momentum': float(metrics.hip_angular_momentum),
+            'hip_peak_frame': int(metrics.hip_peak_frame),
+            
+            # Shoulder metrics
+            'shoulder_angular_momentum': float(metrics.shoulder_angular_momentum),
+            'shoulder_peak_frame': int(metrics.shoulder_peak_frame),
+            
+            # Ratios and timing
+            'shoulder_hip_ratio': float(metrics.shoulder_hip_ratio),
+            'timing_gap_ms': float(metrics.timing_gap_ms),
+            
+            # Bat metrics
+            'bat_speed': float(metrics.bat_speed),
+            'bat_kinetic_energy': float(metrics.bat_kinetic_energy),
+            
+            # Arm extension
+            'lead_arm_extension': float(metrics.lead_arm_extension),
+            
+            # Ground force estimate
+            'vertical_grf_estimate': float(metrics.vertical_grf_estimate),
+            'lead_leg_energy': float(metrics.lead_leg_energy),
+            
+            # Context
+            'handedness': str(metrics.handedness)
         }
 
 

@@ -58,7 +58,7 @@ async def analyze_swing(
         
         # Parse data using CSVParser
         parser = CSVParser()
-        swing_metrics = parser.parse_files(momentum_df, kinematics_df)
+        swing_metrics = parser.parse_files(momentum_df, kinematics_df, handedness=handedness)
         
         # Convert to dict for compatibility
         metrics = parser.to_dict(swing_metrics)
