@@ -258,3 +258,35 @@ if __name__ == "__main__":
     print(f"  Exit Velo Gain: +{outcomes.improvement['exit_velo_gain']} mph")
     print(f"  Launch Angle Gain: +{outcomes.improvement['launch_angle_gain']}°")
     print(f"  GB Rate Change: {outcomes.improvement['gb_rate_change']}%")
+
+
+# Convenience function for easier imports
+def predict_ball_outcomes(metrics, efficiency, pattern=None) -> Dict:
+    """
+    Predict ball outcomes from swing metrics
+    
+    Args:
+        metrics: SwingMetrics dataclass or dict
+        efficiency: EfficiencyScores or dict
+        pattern: Optional PatternDiagnosis for severity adjustments
+        
+    Returns:
+        Dictionary with current, predicted, and improvement data
+    """
+    from .csv_parser import SwingMetrics
+    from .efficiency_calculator import EfficiencyScores
+    
+    # Convert dicts to objects if needed
+    if isinstance(metrics, dict):
+        metrics = SwingMetrics(**metrics)
+    if isinstance(efficiency, dict):
+        efficiency = EfficiencyScores(**efficiency)
+    
+    predictor = BallOutcomePredictor()
+    outcomes = predictor.predict(metrics, efficiency, pattern)
+    
+    return {
+        'current': outcomes.current,
+        'predicted': outcomes.predicted,
+        'improvement': outcomes.improvement
+    }

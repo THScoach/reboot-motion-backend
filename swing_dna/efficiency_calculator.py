@@ -81,3 +81,23 @@ class EfficiencyCalculator:
             'contact_efficiency': scores.contact_efficiency,
             'total_efficiency': scores.total_efficiency
         }
+
+
+# Convenience function for easier imports
+def calculate_efficiency_scores(metrics) -> Dict:
+    """
+    Calculate efficiency scores from swing metrics
+    
+    Args:
+        metrics: SwingMetrics dataclass or dict with biomechanical data
+        
+    Returns:
+        Dictionary with efficiency scores
+    """
+    calculator = EfficiencyCalculator()
+    # Handle both SwingMetrics and dict inputs
+    if isinstance(metrics, dict):
+        from .csv_parser import SwingMetrics
+        metrics = SwingMetrics(**metrics)
+    scores = calculator.calculate(metrics)
+    return calculator.to_dict(scores)

@@ -19,6 +19,9 @@ from coach_rick_api import router as coach_rick_router
 from whop_webhooks import router as whop_webhook_router
 from whop_middleware import router as whop_subscription_router
 
+# Import Swing DNA API
+from swing_dna.api import router as swing_dna_router
+
 # Initialize FastAPI app
 app = FastAPI(
     title="Coach Rick AI - WAP Integration",
@@ -41,6 +44,9 @@ app.include_router(coach_rick_router, tags=["Coach Rick AI"])
 # Include Whop routers
 app.include_router(whop_webhook_router, tags=["Whop Webhooks"])
 app.include_router(whop_subscription_router, tags=["Whop Subscription"])
+
+# Include Swing DNA router
+app.include_router(swing_dna_router, tags=["Swing DNA"])
 
 # Serve the Coach Rick UI
 @app.get("/coach-rick-ui", response_class=HTMLResponse)

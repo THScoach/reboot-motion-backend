@@ -247,3 +247,18 @@ if __name__ == "__main__":
     print(f"  Root Cause: {diagnosis.root_cause}")
     print(f"  Primary Protocol: {diagnosis.primary_protocol}")
     print(f"  Secondary Protocol: {diagnosis.secondary_protocol}")
+
+
+# Convenience function for easier imports
+def diagnose_swing_pattern(metrics: SwingMetrics) -> PatternDiagnosis:
+    """
+    Convenience function to diagnose swing pattern
+    
+    Args:
+        metrics: SwingMetrics dataclass with biomechanical data
+        
+    Returns:
+        PatternDiagnosis with pattern type, severity, and protocols
+    """
+    recognizer = PatternRecognizer()
+    return recognizer.diagnose(metrics)
