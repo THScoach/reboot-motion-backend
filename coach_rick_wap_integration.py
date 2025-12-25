@@ -54,6 +54,18 @@ async def coach_rick_ui():
     with open("templates/coach_rick_analysis.html", "r") as f:
         return f.read()
 
+# Serve Swing DNA Upload UI
+@app.get("/swing-dna/upload", response_class=HTMLResponse)
+async def swing_dna_upload():
+    with open("templates/swing_dna/upload.html", "r") as f:
+        return f.read()
+
+# Serve Swing DNA Report UI
+@app.get("/swing-dna/report", response_class=HTMLResponse)
+async def swing_dna_report():
+    with open("templates/swing_dna/report.html", "r") as f:
+        return f.read()
+
 # Root endpoint with integration info
 @app.get("/", response_class=HTMLResponse)
 def read_root():
