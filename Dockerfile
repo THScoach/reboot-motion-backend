@@ -1,40 +1,27 @@
-# Dockerfile for Reboot Motion Backend API
-# Fixes: Python 3.12 distutils issue - Use Python 3.11
-
-FROM python:3.11-slim
+# CATCHING BARRELS - Production Dockerfile
+FROM python:3.12-slim
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies for OpenCV and MediaPipe
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender1 \
-    libgomp1 \
-    libgl1 \
-    libglib2.0-0 \
+    gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for caching
+# Copy requirements and install Python dependencies
 COPY requirements.txt .
-
-# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p /tmp/mediapipe_models
-
 # Expose port
-EXPOSE 8080
+EXPOSE 8006
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8080/health')"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:8006/health')"
 
-# Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Run application
+CMD ["uvicorn", "coach_rick_wap_integration:app", "--host", "0.0.0.0", "--port", "8006"]

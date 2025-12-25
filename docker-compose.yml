@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: catching-barrels-api
+    ports:
+      - "8006:8006"
+    environment:
+      - WHOP_API_KEY=${WHOP_API_KEY}
+      - WHOP_COMPANY_ID=biz_4f4wiRWwiEZflF
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./catching_barrels.db}
+      - PORT=8006
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - ./data:/app/data
+    networks:
+      - catching-barrels-network
+
+networks:
+  catching-barrels-network:
+    driver: bridge
