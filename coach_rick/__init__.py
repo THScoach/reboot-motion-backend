@@ -21,11 +21,15 @@ __author__ = "Builder 2"
 from .motor_profile_classifier import MotorProfileClassifier, classify_motor_profile
 from .pattern_recognition import PatternRecognitionEngine
 from .knowledge_base import DRILL_LIBRARY, PRESCRIPTION_RULES, PATTERN_RULES
+from .drill_prescription import DrillPrescriptionEngine
+from .conversational_ai import ConversationalAI
 
 __all__ = [
     'MotorProfileClassifier',
     'classify_motor_profile',
     'PatternRecognitionEngine',
+    'DrillPrescriptionEngine',
+    'ConversationalAI',
     'DRILL_LIBRARY',
     'PRESCRIPTION_RULES',
     'PATTERN_RULES'
