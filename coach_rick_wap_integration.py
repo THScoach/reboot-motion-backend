@@ -6,21 +6,38 @@ This server provides Coach Rick AI endpoints integrated with
 Whop subscriptions and payment processing.
 """
 
+import os
+import sys
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from typing import Optional
 import uvicorn
 
+# Startup logging for Railway debugging
+print("=" * 70, file=sys.stderr)
+print("🚀 STARTING COACH RICK AI - WHOP INTEGRATION", file=sys.stderr)
+print("=" * 70, file=sys.stderr)
+print(f"Python version: {sys.version}", file=sys.stderr)
+print(f"PORT env var: {os.getenv('PORT', 'NOT SET')}", file=sys.stderr)
+print(f"Working directory: {os.getcwd()}", file=sys.stderr)
+print("Importing modules...", file=sys.stderr)
+
 # Import Coach Rick API router
 from coach_rick_api import router as coach_rick_router
+print("✓ Imported coach_rick_api", file=sys.stderr)
 
 # Import Whop integration
 from whop_webhooks import router as whop_webhook_router
+print("✓ Imported whop_webhooks", file=sys.stderr)
 from whop_middleware import router as whop_subscription_router
+print("✓ Imported whop_middleware", file=sys.stderr)
 
 # Import Swing DNA API
 from swing_dna.api import router as swing_dna_router
+print("✓ Imported swing_dna.api", file=sys.stderr)
+
+print("All imports successful!", file=sys.stderr)
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -28,6 +45,7 @@ app = FastAPI(
     description="Coach Rick AI Engine integrated with Whop payment system",
     version="1.0.0"
 )
+print("✓ FastAPI app initialized", file=sys.stderr)
 
 # CORS middleware - allow all origins for development
 app.add_middleware(
@@ -37,16 +55,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+print("✓ CORS middleware added", file=sys.stderr)
 
 # Include Coach Rick AI router
 app.include_router(coach_rick_router, tags=["Coach Rick AI"])
+print("✓ Mounted coach_rick_router", file=sys.stderr)
 
 # Include Whop routers
 app.include_router(whop_webhook_router, tags=["Whop Webhooks"])
+print("✓ Mounted whop_webhook_router", file=sys.stderr)
 app.include_router(whop_subscription_router, tags=["Whop Subscription"])
+print("✓ Mounted whop_subscription_router", file=sys.stderr)
 
 # Include Swing DNA router
 app.include_router(swing_dna_router, tags=["Swing DNA"])
+print("✓ Mounted swing_dna_router", file=sys.stderr)
+
+print("=" * 70, file=sys.stderr)
+print("✅ ALL ROUTERS MOUNTED SUCCESSFULLY", file=sys.stderr)
+print("=" * 70, file=sys.stderr)
 
 # Serve the Coach Rick UI
 @app.get("/coach-rick-ui", response_class=HTMLResponse)
