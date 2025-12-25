@@ -34,6 +34,12 @@ app.add_middleware(
 # Include Coach Rick AI router
 app.include_router(coach_rick_router, tags=["Coach Rick AI"])
 
+# Serve the Coach Rick UI
+@app.get("/coach-rick-ui", response_class=HTMLResponse)
+async def coach_rick_ui():
+    with open("templates/coach_rick_analysis.html", "r") as f:
+        return f.read()
+
 # Root endpoint with integration info
 @app.get("/", response_class=HTMLResponse)
 def read_root():
