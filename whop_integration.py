@@ -52,7 +52,7 @@ WHOP_PRODUCTS = {
         ]
     },
     SubscriptionTier.PRO: {
-        "id": "prod_[PENDING]",  # TODO: Update with actual product ID
+        "id": "prod_O4CB6y0IzNJLe",
         "name": "Barrels Pro",
         "monthly_price": 19.99,
         "annual_price": 149.99,
@@ -66,7 +66,7 @@ WHOP_PRODUCTS = {
         ]
     },
     SubscriptionTier.PREMIUM: {
-        "id": "prod_[CURRENT PRODUCT - UPDATE ID]",  # TODO: Update
+        "id": "prod_7068OOSHrjMvc",
         "name": "Barrels Premium",
         "price": 99.00,
         "swing_limit": -1,  # Unlimited
@@ -81,7 +81,7 @@ WHOP_PRODUCTS = {
         ]
     },
     SubscriptionTier.ULTIMATE: {
-        "id": "prod_[CURRENT PRODUCT - UPDATE ID]",  # TODO: Update
+        "id": "prod_OXEGclGuMyYVd",
         "name": "Barrels Ultimate",
         "price": 299.99,
         "swing_limit": -1,  # Unlimited
