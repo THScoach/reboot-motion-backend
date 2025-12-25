@@ -107,6 +107,16 @@ async def test_player_guide():
     with open("test_player_guide.html", "r") as f:
         return f.read()
 
+# Serve Player Report UI
+@app.get("/player-report", response_class=HTMLResponse)
+async def player_report():
+    """
+    Player Report UI - Complete 11-section analysis display
+    Query params: ?session_id=YOUR_SESSION_ID
+    """
+    with open("templates/player_report.html", "r") as f:
+        return f.read()
+
 # Root endpoint with integration info
 @app.get("/", response_class=HTMLResponse)
 def read_root():

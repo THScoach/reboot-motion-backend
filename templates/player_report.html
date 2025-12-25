@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Report - Catching Barrels</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom color variables */
+        :root {
+            --color-twister: #10b981;
+            --color-tilter: #3b82f6;
+            --color-hybrid: #8b5cf6;
+            --color-spinner: #f59e0b;
+        }
+        
+        /* Dark mode theme */
+        body {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+        }
+        
+        /* KRS Circular gauge */
+        .krs-circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: conic-gradient(
+                var(--krs-color) calc(var(--krs-percent) * 1%), 
+                rgba(255,255,255,0.1) 0
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .krs-circle::before {
+            content: '';
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: #1e293b;
+        }
+        
+        .krs-value {
+            position: relative;
+            z-index: 10;
+            font-size: 3rem;
+            font-weight: 700;
+            color: white;
+        }
+        
+        /* Motor profile colors */
+        .profile-twister { border-color: var(--color-twister); }
+        .profile-tilter { border-color: var(--color-tilter); }
+        .profile-hybrid { border-color: var(--color-hybrid); }
+        .profile-spinner { border-color: var(--color-spinner); }
+        
+        .bg-twister { background-color: var(--color-twister); }
+        .bg-tilter { background-color: var(--color-tilter); }
+        .bg-hybrid { background-color: var(--color-hybrid); }
+        .bg-spinner { background-color: var(--color-spinner); }
+        
+        /* Progress bar animation */
+        .progress-bar {
+            animation: progressFill 1s ease-out forwards;
+        }
+        
+        @keyframes progressFill {
+            from { width: 0; }
+        }
+        
+        /* Card hover effects */
+        .card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body class="text-white font-sans">
+    <div id="app" class="container mx-auto px-4 py-8 max-w-6xl">
+        
+        <!-- Loading State -->
+        <div id="loading" class="flex flex-col items-center justify-center min-h-screen">
+            <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p class="text-xl text-gray-400">Loading Player Report...</p>
+        </div>
+        
+        <!-- Error State -->
+        <div id="error" class="hidden flex flex-col items-center justify-center min-h-screen">
+            <div class="text-6xl mb-4">⚠️</div>
+            <h2 class="text-2xl font-bold mb-2">Error Loading Report</h2>
+            <p id="error-message" class="text-gray-400 mb-4"></p>
+            <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg">
+                Try Again
+            </button>
+        </div>
+        
+        <!-- Main Content -->
+        <div id="content" class="hidden">
+            
+            <!-- ============================================ -->
+            <!-- HEADER -->
+            <!-- ============================================ -->
+            <header class="mb-8 flex justify-between items-start">
+                <div>
+                    <h1 class="text-4xl font-bold mb-2">
+                        <span class="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                            Catching Barrels
+                        </span>
+                    </h1>
+                    <p class="text-gray-400" id="player-name">Player Name</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-400">Session</div>
+                    <div class="text-2xl font-bold" id="session-number">#1</div>
+                    <div class="text-xs text-gray-500" id="session-date">2025-12-25</div>
+                </div>
+            </header>
+            
+            <!-- Progress Gate (if swings < 50) -->
+            <div id="progress-gate" class="hidden mb-8 p-6 bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-600/30 rounded-xl">
+                <div class="flex items-start gap-4">
+                    <div class="text-4xl">🔒</div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold mb-2">Unlock Full Analysis</h3>
+                        <p class="text-gray-300 mb-4">Complete <span id="swings-remaining">40</span> more swings to unlock your complete biomechanical analysis.</p>
+                        <div class="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
+                            <div id="progress-bar" class="progress-bar h-full bg-gradient-to-r from-yellow-500 to-orange-500"></div>
+                        </div>
+                        <p class="text-sm text-gray-400 mt-2"><span id="total-swings">10</span> / 50 swings</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ============================================ -->
+            <!-- 1. KRS HERO SECTION -->
+            <!-- ============================================ -->
+            <section class="mb-8">
+                <div class="card bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 border border-slate-700">
+                    <div class="flex flex-col md:flex-row items-center gap-8">
+                        <!-- KRS Gauge -->
+                        <div class="flex flex-col items-center">
+                            <div class="krs-circle" id="krs-gauge" style="--krs-percent: 75; --krs-color: #8b5cf6;">
+                                <div class="krs-value" id="krs-total">75</div>
+                            </div>
+                            <div class="mt-4 text-center">
+                                <div class="text-sm text-gray-400">KRS Level</div>
+                                <div class="text-2xl font-bold" id="krs-level">ADVANCED</div>
+                                <div class="text-xl mt-1" id="krs-emoji">⭐</div>
+                            </div>
+                        </div>
+                        
+                        <!-- KRS Breakdown -->
+                        <div class="flex-1 w-full">
+                            <h2 class="text-3xl font-bold mb-6">Kinetic Rotational Score</h2>
+                            
+                            <!-- Creation Score -->
+                            <div class="mb-4">
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-gray-300">Creation Score</span>
+                                    <span class="font-bold" id="creation-score">78</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                                    <div id="creation-bar" class="progress-bar h-full bg-gradient-to-r from-green-500 to-emerald-500" style="width: 78%"></div>
+                                </div>
+                                <p class="text-sm text-gray-400 mt-1">Body's ability to generate energy</p>
+                            </div>
+                            
+                            <!-- Transfer Score -->
+                            <div class="mb-4">
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-gray-300">Transfer Score</span>
+                                    <span class="font-bold" id="transfer-score">72</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                                    <div id="transfer-bar" class="progress-bar h-full bg-gradient-to-r from-blue-500 to-cyan-500" style="width: 72%"></div>
+                                </div>
+                                <p class="text-sm text-gray-400 mt-1">Efficiency of energy transfer to bat</p>
+                            </div>
+                            
+                            <!-- Trend -->
+                            <div class="flex gap-4 mt-6">
+                                <div class="flex items-center gap-2 text-green-400" id="krs-trend">
+                                    <span>↗</span>
+                                    <span class="text-sm">+3.2 from last session</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Data Source Badge -->
+                            <div class="mt-4">
+                                <span class="inline-block px-3 py-1 bg-blue-600/20 border border-blue-500/30 rounded-full text-sm" id="data-source">
+                                    📹 Video Analysis
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- ============================================ -->
+            <!-- 2. BRAIN SECTION (Motor Profile) -->
+            <!-- ============================================ -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span>🧠</span> Brain
+                </h2>
+                <div class="card bg-slate-800 rounded-xl p-6 border-l-4" id="motor-card">
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-16 h-16 rounded-full flex items-center justify-center text-3xl" id="motor-icon-bg">
+                                    <span id="motor-icon">🌪️</span>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-400">Motor Profile</div>
+                                    <div class="text-2xl font-bold" id="motor-type">THE TWISTER</div>
+                                    <div class="text-sm text-gray-400">
+                                        <span id="motor-confidence">92</span>% confidence
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-gray-300 mb-2" id="motor-tagline">Rotational power dominates</p>
+                            <p class="text-sm text-gray-400" id="motor-description">
+                                Generates power through aggressive hip rotation and torso coil.
+                            </p>
+                        </div>
+                        
+                        <!-- Tempo -->
+                        <div class="flex-1 bg-slate-700/50 rounded-lg p-4">
+                            <h4 class="font-bold mb-3">⏱️ Tempo</h4>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-gray-400">Ratio</span>
+                                <span class="font-bold" id="tempo-ratio">1.8</span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="inline-block px-2 py-1 rounded text-xs" id="tempo-badge">Aggressive</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2" id="tempo-message">Fast load, explosive launch</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- ============================================ -->
+            <!-- 3. BODY SECTION (Creation) -->
+            <!-- ============================================ -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span>💪</span> Body
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Capacity -->
+                    <div class="card bg-slate-800 rounded-xl p-6 border border-slate-700">
+                        <h3 class="text-xl font-bold mb-4">Capacity</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-gray-400">Kinetic Energy</span>
+                                    <span class="font-bold"><span id="capacity-ke">125</span> J</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Est. Bat Speed</span>
+                                    <span class="font-bold"><span id="capacity-bat-speed">85</span> mph</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Ground Flow -->
+                    <div class="card bg-slate-800 rounded-xl p-6 border border-slate-700">
+                        <h3 class="text-xl font-bold mb-4">⚡ Ground Flow</h3>
+                        <div class="space-y-2" id="ground-flow">
+                            <!-- Will be populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- ============================================ -->
+            <!-- 4. BAT SECTION (Transfer) -->
+            <!-- ============================================ -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span>🏏</span> Bat
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Kinetic Chain -->
+                    <div class="card bg-slate-800 rounded-xl p-6 border border-slate-700">
+                        <h3 class="text-xl font-bold mb-4">🔗 Kinetic Chain</h3>
+                        <div id="kinetic-chain">
+                            <!-- Will be populated by JS -->
+                        </div>
+                    </div>
+                    
+                    <!-- Lead Leg -->
+                    <div class="card bg-slate-800 rounded-xl p-6 border border-slate-700">
+                        <h3 class="text-xl font-bold mb-4">🦵 Lead Leg</h3>
+                        <div id="lead-leg">
+                            <!-- Will be populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- ============================================ -->
+            <!-- 5. BALL SECTION (Outcomes) -->
+            <!-- ============================================ -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span>⚾</span> Ball
+                </h2>
+                <div class="card bg-slate-800 rounded-xl p-6 border border-slate-700">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-blue-400" id="current-exit-velo">95</div>
+                            <div class="text-sm text-gray-400 mt-1">Current Exit Velo</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-green-400" id="capacity-exit-velo">102</div>
+                            <div class="text-sm text-gray-400 mt-1">Capacity Exit Velo</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-yellow-400" id="on-table">+7</div>
+                            <div class="text-sm text-gray-400 mt-1">On the Table</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-purple-400" id="contact-quality">8.2</div>
+                            <div class="text-sm text-gray-400 mt-1">Contact Quality</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- ============================================ -->
+            <!-- 6. WINS SECTION -->
+            <!-- ============================================ -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span>🏆</span> Wins (Top Strengths)
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="wins-grid">
+                    <!-- Will be populated by JS -->
+                </div>
+            </section>
+            
+            <!-- ============================================ -->
+            <!-- 7. MISSION SECTION -->
+            <!-- ============================================ -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span>🎯</span> Your Mission
+                </h2>
+                <div class="card bg-gradient-to-br from-orange-600/20 to-red-600/20 border border-orange-500/30 rounded-xl p-6">
+                    <div class="flex items-start gap-4">
+                        <div class="text-4xl">🚀</div>
+                        <div class="flex-1">
+                            <h3 class="text-2xl font-bold mb-2" id="mission-title">Early Extension</h3>
+                            <p class="text-gray-300 mb-4" id="mission-explanation">
+                                Your lead leg is extending too early in the swing, causing a power leak.
+                            </p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div>
+                                    <div class="text-sm text-gray-400">Current</div>
+                                    <div class="text-xl font-bold" id="mission-current">145°</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-400">Target</div>
+                                    <div class="text-xl font-bold text-green-400" id="mission-target">165°</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-400">Expected Fix</div>
+                                    <div class="text-xl font-bold text-blue-400" id="mission-timeline">4-6 weeks</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- ============================================ -->
+            <!-- 8. DRILLS SECTION -->
+            <!-- ============================================ -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span>📋</span> Training Plan
+                </h2>
+                <div class="space-y-4" id="drills-list">
+                    <!-- Will be populated by JS -->
+                </div>
+            </section>
+            
+            <!-- ============================================ -->
+            <!-- 9. PROGRESS SECTION -->
+            <!-- ============================================ -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span>📊</span> Progress
+                </h2>
+                <div class="card bg-slate-800 rounded-xl p-6 border border-slate-700">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+                        <div>
+                            <div class="text-3xl font-bold" id="progress-sessions">1</div>
+                            <div class="text-sm text-gray-400">Sessions</div>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-bold" id="progress-swings">10</div>
+                            <div class="text-sm text-gray-400">Total Swings</div>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-bold" id="progress-streak">1</div>
+                            <div class="text-sm text-gray-400">Week Streak</div>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-bold" id="progress-milestones">3</div>
+                            <div class="text-sm text-gray-400">Milestones</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- ============================================ -->
+            <!-- 10. COACH RICK MESSAGE -->
+            <!-- ============================================ -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span>👨‍🏫</span> Coach Rick Says
+                </h2>
+                <div class="card bg-gradient-to-br from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-xl p-6">
+                    <div class="flex items-start gap-4">
+                        <div class="text-4xl">💬</div>
+                        <div>
+                            <p class="text-lg mb-4" id="coach-message">
+                                Great foundation! You're showing strong rotational power. Focus on maintaining that lead leg stability and you'll unlock even more distance.
+                            </p>
+                            <div class="text-sm text-gray-400">— Coach Rick</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- ============================================ -->
+            <!-- FOOTER CTA -->
+            <!-- ============================================ -->
+            <footer class="mt-12 text-center">
+                <button onclick="window.location.href='/coach-rick-ui'" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-8 py-4 rounded-xl text-lg font-bold shadow-xl">
+                    Upload Another Swing
+                </button>
+                <p class="text-gray-400 text-sm mt-4">Keep training to unlock your full potential! 🚀</p>
+            </footer>
+            
+        </div>
+    </div>
+    
+    <script>
+        // Get session_id from URL query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session_id');
+        
+        if (!sessionId) {
+            showError('No session_id provided in URL. Please include ?session_id=YOUR_SESSION_ID');
+        } else {
+            loadReport(sessionId);
+        }
+        
+        async function loadReport(sessionId) {
+            try {
+                // Fetch PlayerReport from API
+                const response = await fetch(`/api/sessions/${sessionId}/report`);
+                
+                if (!response.ok) {
+                    throw new Error(`API returned ${response.status}: ${response.statusText}`);
+                }
+                
+                const report = await response.json();
+                console.log('Loaded report:', report);
+                
+                // Populate all sections
+                populateHeader(report);
+                populateProgressGate(report.progress);
+                populateKRS(report.krs);
+                populateBrain(report.brain);
+                populateBody(report.body);
+                populateBat(report.bat);
+                populateBall(report.ball);
+                populateWins(report.wins);
+                populateMission(report.mission);
+                populateDrills(report.drills);
+                populateProgress(report.progress);
+                populateCoachMessage(report.coach_message);
+                
+                // Show content
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('content').classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Error loading report:', error);
+                showError(error.message);
+            }
+        }
+        
+        function showError(message) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error').classList.remove('hidden');
+            document.getElementById('error-message').textContent = message;
+        }
+        
+        function populateHeader(report) {
+            document.getElementById('player-name').textContent = report.player.name;
+            document.getElementById('session-number').textContent = `#${report.session_number}`;
+            document.getElementById('session-date').textContent = new Date(report.session_date).toLocaleDateString();
+        }
+        
+        function populateProgressGate(progress) {
+            if (progress.total_swings < 50) {
+                document.getElementById('progress-gate').classList.remove('hidden');
+                const remaining = 50 - progress.total_swings;
+                document.getElementById('swings-remaining').textContent = remaining;
+                document.getElementById('total-swings').textContent = progress.total_swings;
+                const percent = (progress.total_swings / 50) * 100;
+                document.getElementById('progress-bar').style.width = `${percent}%`;
+            }
+        }
+        
+        function populateKRS(krs) {
+            // KRS gauge
+            const krsValue = Math.round(krs.total);
+            document.getElementById('krs-total').textContent = krsValue;
+            document.getElementById('krs-level').textContent = krs.level;
+            document.getElementById('krs-emoji').textContent = krs.emoji;
+            
+            // Set gauge color based on level
+            const colors = {
+                'FOUNDATION': '#ef4444',
+                'BUILDING': '#f59e0b',
+                'DEVELOPING': '#3b82f6',
+                'ADVANCED': '#8b5cf6',
+                'ELITE': '#10b981'
+            };
+            const krsColor = colors[krs.level] || '#8b5cf6';
+            document.getElementById('krs-gauge').style.setProperty('--krs-color', krsColor);
+            document.getElementById('krs-gauge').style.setProperty('--krs-percent', krsValue);
+            
+            // Scores
+            document.getElementById('creation-score').textContent = Math.round(krs.creation_score);
+            document.getElementById('creation-bar').style.width = `${krs.creation_score}%`;
+            document.getElementById('transfer-score').textContent = Math.round(krs.transfer_score);
+            document.getElementById('transfer-bar').style.width = `${krs.transfer_score}%`;
+            
+            // Data source
+            document.getElementById('data-source').textContent = `📹 ${krs.data_source}`;
+        }
+        
+        function populateBrain(brain) {
+            const profile = brain.motor_profile;
+            
+            // Motor profile
+            document.getElementById('motor-type').textContent = profile.display_name;
+            document.getElementById('motor-icon').textContent = profile.icon;
+            document.getElementById('motor-confidence').textContent = Math.round(profile.primary_confidence);
+            document.getElementById('motor-tagline').textContent = profile.tagline;
+            
+            // Set card border color
+            const profileClass = `profile-${profile.primary.toLowerCase()}`;
+            document.getElementById('motor-card').classList.add(profileClass);
+            
+            // Tempo
+            document.getElementById('tempo-ratio').textContent = brain.tempo.ratio.toFixed(1);
+            const tempoBadge = document.getElementById('tempo-badge');
+            tempoBadge.textContent = brain.tempo.category;
+            tempoBadge.className = `inline-block px-2 py-1 rounded text-xs ${
+                brain.tempo.category === 'Aggressive' ? 'bg-red-600' : 
+                brain.tempo.category === 'Balanced' ? 'bg-green-600' : 'bg-yellow-600'
+            }`;
+            document.getElementById('tempo-message').textContent = brain.tempo.message;
+        }
+        
+        function populateBody(body) {
+            // Capacity
+            document.getElementById('capacity-ke').textContent = body.capacity.ke_joules.toFixed(1);
+            document.getElementById('capacity-bat-speed').textContent = body.capacity.bat_speed_mph.toFixed(1);
+            
+            // Ground flow
+            const groundFlow = document.getElementById('ground-flow');
+            groundFlow.innerHTML = '';
+            const flows = [
+                { name: 'Stance', score: body.ground_flow.stance_score, status: body.ground_flow.stance_status },
+                { name: 'Load', score: body.ground_flow.load_score, status: body.ground_flow.load_status },
+                { name: 'Stride', score: body.ground_flow.stride_score, status: body.ground_flow.stride_status },
+                { name: 'Plant', score: body.ground_flow.plant_score, status: body.ground_flow.plant_status }
+            ];
+            flows.forEach(flow => {
+                const statusColor = flow.status === 'GOOD' ? 'text-green-400' : flow.status === 'FAIR' ? 'text-yellow-400' : 'text-red-400';
+                groundFlow.innerHTML += `
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">${flow.name}</span>
+                        <span class="${statusColor} font-bold">${flow.score.toFixed(1)} - ${flow.status}</span>
+                    </div>
+                `;
+            });
+        }
+        
+        function populateBat(bat) {
+            // Kinetic chain
+            const kineticChain = document.getElementById('kinetic-chain');
+            kineticChain.innerHTML = `
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Score</span>
+                        <span class="font-bold">${bat.kinetic_chain.score.toFixed(1)}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Status</span>
+                        <span class="${bat.kinetic_chain.status === 'GOOD' ? 'text-green-400' : 'text-yellow-400'}">${bat.kinetic_chain.status}</span>
+                    </div>
+                </div>
+            `;
+            
+            // Lead leg
+            const leadLeg = document.getElementById('lead-leg');
+            leadLeg.innerHTML = `
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Knee Extension</span>
+                        <span class="font-bold">${bat.lead_leg.knee_extension_deg.toFixed(0)}°</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Vertical Force</span>
+                        <span class="font-bold">${bat.lead_leg.vertical_force_score.toFixed(1)}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function populateBall(ball) {
+            document.getElementById('current-exit-velo').textContent = ball.current.exit_velo_mph.toFixed(0);
+            document.getElementById('capacity-exit-velo').textContent = ball.capacity.exit_velo_mph.toFixed(0);
+            const onTable = ball.capacity.exit_velo_mph - ball.current.exit_velo_mph;
+            document.getElementById('on-table').textContent = `+${onTable.toFixed(0)}`;
+            document.getElementById('contact-quality').textContent = ball.current.contact_quality.toFixed(1);
+        }
+        
+        function populateWins(wins) {
+            const winsGrid = document.getElementById('wins-grid');
+            winsGrid.innerHTML = '';
+            wins.forEach(win => {
+                winsGrid.innerHTML += `
+                    <div class="card bg-slate-800 rounded-xl p-4 border border-green-500/30">
+                        <div class="text-3xl mb-2">${win.icon}</div>
+                        <h4 class="font-bold mb-1">${win.metric}</h4>
+                        <div class="text-2xl font-bold text-green-400 mb-2">${win.score.toFixed(1)}</div>
+                        <div class="text-xs text-gray-400">Top ${win.percentile}%</div>
+                        <p class="text-sm text-gray-300 mt-2">${win.message}</p>
+                    </div>
+                `;
+            });
+        }
+        
+        function populateMission(mission) {
+            document.getElementById('mission-title').textContent = mission.title;
+            document.getElementById('mission-explanation').textContent = mission.explanation;
+            document.getElementById('mission-current').textContent = `${mission.current_value} ${mission.unit}`;
+            document.getElementById('mission-target').textContent = `${mission.target_value} ${mission.unit}`;
+            document.getElementById('mission-timeline').textContent = `${mission.expected_fix_weeks} weeks`;
+        }
+        
+        function populateDrills(drills) {
+            const drillsList = document.getElementById('drills-list');
+            drillsList.innerHTML = '';
+            drills.forEach((drill, index) => {
+                drillsList.innerHTML += `
+                    <div class="card bg-slate-800 rounded-xl p-6 border border-slate-700">
+                        <div class="flex items-start gap-4">
+                            <div class="text-3xl">📋</div>
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold mb-2">${drill.name}</h3>
+                                <div class="flex gap-4 mb-3 text-sm">
+                                    <span class="px-2 py-1 bg-blue-600/20 rounded">${drill.category}</span>
+                                    <span class="text-gray-400">${drill.volume}</span>
+                                    <span class="text-gray-400">${drill.frequency}</span>
+                                </div>
+                                <p class="text-gray-300 mb-3">${drill.why_it_works}</p>
+                                <div class="bg-slate-700/50 rounded-lg p-3">
+                                    <h4 class="text-sm font-bold mb-2">Key Cues:</h4>
+                                    <ul class="text-sm text-gray-300 space-y-1">
+                                        ${drill.key_cues.map(cue => `<li>• ${cue}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        function populateProgress(progress) {
+            document.getElementById('progress-sessions').textContent = progress.session_number;
+            document.getElementById('progress-swings').textContent = progress.total_swings;
+            document.getElementById('progress-streak').textContent = progress.week_streak;
+            // Milestones count would come from a separate API call
+        }
+        
+        function populateCoachMessage(coachMessage) {
+            document.getElementById('coach-message').textContent = coachMessage.what_i_see;
+        }
+    </script>
+</body>
+</html>

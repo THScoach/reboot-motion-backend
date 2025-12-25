@@ -470,6 +470,35 @@
         
         <!-- Results -->
         <div class="results" id="results">
+            <!-- KRS Hero Section (NEW) -->
+            <div class="result-card" id="krsHeroCard" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 2rem;">
+                    <div style="flex: 1;">
+                        <h2 style="color: white; margin-bottom: 1rem;">⭐ Kinetic Rotational Score</h2>
+                        <div id="krsHeroContent">
+                            <div style="font-size: 4rem; font-weight: 700; margin-bottom: 0.5rem;" id="krsTotal">--</div>
+                            <div style="font-size: 1.5rem; margin-bottom: 1rem;" id="krsLevel">--</div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
+                                <div>
+                                    <div style="opacity: 0.8;">Creation Score</div>
+                                    <div style="font-size: 2rem; font-weight: 700;" id="krsCreation">--</div>
+                                </div>
+                                <div>
+                                    <div style="opacity: 0.8;">Transfer Score</div>
+                                    <div style="font-size: 2rem; font-weight: 700;" id="krsTransfer">--</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <a id="viewFullReportBtn" href="#" style="display: inline-block; background: white; color: #667eea; padding: 1rem 2rem; border-radius: 12px; text-decoration: none; font-weight: 700; margin-top: 1rem;">
+                            View Complete Report →
+                        </a>
+                        <div style="margin-top: 1rem; opacity: 0.8; font-size: 0.9rem;">See full 11-section breakdown</div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Motor Profile -->
             <div class="result-card">
                 <h2>🎯 Motor Profile</h2>
@@ -620,11 +649,45 @@
         });
         
         function displayResults(data) {
+            // Store session_id for later use
+            window.currentSessionId = data.session_id;
+            
+            // Display existing Coach Rick results
             displayMotorProfile(data.motor_profile);
             displayMetrics(data);
             displayPatterns(data.patterns, data.primary_issue);
             displayDrills(data.prescription);
             displayCoachMessages(data.coach_messages);
+            
+            // Fetch and display PlayerReport with KRS
+            fetchPlayerReport(data.session_id);
+        }
+        
+        async function fetchPlayerReport(sessionId) {
+            try {
+                const response = await fetch(`/api/sessions/${sessionId}/report`);
+                if (response.ok) {
+                    const report = await response.json();
+                    displayKRS(report.krs, sessionId);
+                }
+            } catch (error) {
+                console.log('PlayerReport not yet available:', error);
+                // KRS section will remain hidden if report not ready
+            }
+        }
+        
+        function displayKRS(krs, sessionId) {
+            // Show KRS card
+            document.getElementById('krsHeroCard').style.display = 'block';
+            
+            // Populate KRS values
+            document.getElementById('krsTotal').textContent = Math.round(krs.total);
+            document.getElementById('krsLevel').textContent = `${krs.level} ${krs.emoji}`;
+            document.getElementById('krsCreation').textContent = Math.round(krs.creation_score);
+            document.getElementById('krsTransfer').textContent = Math.round(krs.transfer_score);
+            
+            // Set link to full report
+            document.getElementById('viewFullReportBtn').href = `/player-report?session_id=${sessionId}`;
         }
         
         function displayMotorProfile(profile) {
