@@ -107,6 +107,13 @@ async def test_player_guide():
     with open("test_player_guide.html", "r") as f:
         return f.read()
 
+# Serve 4B Cards Test Page
+@app.get("/test-4b-cards", response_class=HTMLResponse)
+async def test_4b_cards():
+    """Test page for 4B Framework cards"""
+    with open("templates/test_4b_cards.html", "r") as f:
+        return f.read()
+
 # Serve Player Report UI
 @app.get("/player-report", response_class=HTMLResponse)
 async def player_report():

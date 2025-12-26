@@ -499,6 +499,72 @@
                 </div>
             </div>
             
+            <!-- 4B Framework Breakdown (NEW) -->
+            <div id="fourBCards" style="display: none;">
+                <h2 style="margin: 2rem 0 1rem; text-align: center; color: #667eea; font-size: 1.8rem;">
+                    🎯 The 4B Framework: Your Swing Blueprint
+                </h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    
+                    <!-- BRAIN Card -->
+                    <div class="result-card" style="border-left: 4px solid #8B5CF6; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, transparent 100%);">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div style="font-size: 2.5rem;">🧠</div>
+                            <div>
+                                <h3 style="margin: 0; color: #8B5CF6; font-size: 1.3rem;">BRAIN</h3>
+                                <p style="margin: 0; font-size: 0.9rem; opacity: 0.7;">Motor Profile</p>
+                            </div>
+                        </div>
+                        <div id="brainCardContent">
+                            <div class="skeleton" style="height: 80px; border-radius: 8px;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- BODY Card -->
+                    <div class="result-card" style="border-left: 4px solid #10B981; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, transparent 100%);">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div style="font-size: 2.5rem;">💪</div>
+                            <div>
+                                <h3 style="margin: 0; color: #10B981; font-size: 1.3rem;">BODY</h3>
+                                <p style="margin: 0; font-size: 0.9rem; opacity: 0.7;">Creation</p>
+                            </div>
+                        </div>
+                        <div id="bodyCardContent">
+                            <div class="skeleton" style="height: 80px; border-radius: 8px;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- BAT Card -->
+                    <div class="result-card" style="border-left: 4px solid #F59E0B; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, transparent 100%);">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div style="font-size: 2.5rem;">⚾</div>
+                            <div>
+                                <h3 style="margin: 0; color: #F59E0B; font-size: 1.3rem;">BAT</h3>
+                                <p style="margin: 0; font-size: 0.9rem; opacity: 0.7;">Transfer</p>
+                            </div>
+                        </div>
+                        <div id="batCardContent">
+                            <div class="skeleton" style="height: 80px; border-radius: 8px;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- BALL Card -->
+                    <div class="result-card" style="border-left: 4px solid #EF4444; background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, transparent 100%);">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div style="font-size: 2.5rem;">🎯</div>
+                            <div>
+                                <h3 style="margin: 0; color: #EF4444; font-size: 1.3rem;">BALL</h3>
+                                <p style="margin: 0; font-size: 0.9rem; opacity: 0.7;">Outcomes</p>
+                            </div>
+                        </div>
+                        <div id="ballCardContent">
+                            <div class="skeleton" style="height: 80px; border-radius: 8px;"></div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            
             <!-- Motor Profile -->
             <div class="result-card">
                 <h2>🎯 Motor Profile</h2>
@@ -669,10 +735,11 @@
                 if (response.ok) {
                     const report = await response.json();
                     displayKRS(report.krs, sessionId);
+                    display4BCards(report);
                 }
             } catch (error) {
                 console.log('PlayerReport not yet available:', error);
-                // KRS section will remain hidden if report not ready
+                // KRS section and 4B cards will remain hidden if report not ready
             }
         }
         
@@ -688,6 +755,92 @@
             
             // Set link to full report
             document.getElementById('viewFullReportBtn').href = `/player-report?session_id=${sessionId}`;
+        }
+        
+        function display4BCards(report) {
+            // Show 4B cards container
+            document.getElementById('fourBCards').style.display = 'block';
+            
+            // BRAIN Card (Motor Profile)
+            const brainContent = document.getElementById('brainCardContent');
+            const motorProfile = report.brain?.motor_profile || {};
+            const primary = motorProfile.primary || 'Unknown';
+            const confidence = motorProfile.primary_confidence || 0;
+            const tagline = motorProfile.tagline || '';
+            const summary = report.brain?.summary || 'Motor profile identified';
+            
+            brainContent.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="font-size: 1.5rem; font-weight: 700; color: #8B5CF6;">${primary}</span>
+                    <span style="background: rgba(139, 92, 246, 0.2); color: #8B5CF6; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">${Math.round(confidence)}%</span>
+                </div>
+                <p style="margin: 0; font-size: 0.95rem; opacity: 0.8;">${tagline}</p>
+                <p style="margin: 0.5rem 0 0; font-size: 0.85rem; color: #8B5CF6; font-weight: 600;">
+                    ${summary}
+                </p>
+            `;
+            
+            // BODY Card (Creation)
+            const bodyContent = document.getElementById('bodyCardContent');
+            const creationScore = report.krs?.creation_score || 0;
+            const groundFlow = report.body?.ground_flow?.summary || report.body?.ground_flow?.status || 'Analyzing';
+            const engineFlow = report.body?.engine_flow?.summary || report.body?.engine_flow?.status || 'Analyzing';
+            
+            bodyContent.innerHTML = `
+                <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <span style="font-size: 2rem; font-weight: 700; color: #10B981;">${Math.round(creationScore)}</span>
+                    <span style="font-size: 0.9rem; opacity: 0.7;">/ 50</span>
+                </div>
+                <div style="background: rgba(16, 185, 129, 0.1); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.75rem;">
+                    <div style="background: #10B981; height: 100%; width: ${(creationScore/50)*100}%; transition: width 1s ease-out;"></div>
+                </div>
+                <div style="font-size: 0.85rem; opacity: 0.8;">
+                    <div>Ground Flow: <strong>${groundFlow}</strong></div>
+                    <div>Engine Flow: <strong>${engineFlow}</strong></div>
+                </div>
+            `;
+            
+            // BAT Card (Transfer)
+            const batContent = document.getElementById('batCardContent');
+            const transferScore = report.krs?.transfer_score || 0;
+            const kineticChain = report.bat?.kinetic_chain?.summary || 'Analyzing';
+            const efficiency = report.bat?.kinetic_chain?.transfer_efficiency || 0;
+            
+            batContent.innerHTML = `
+                <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <span style="font-size: 2rem; font-weight: 700; color: #F59E0B;">${Math.round(transferScore)}</span>
+                    <span style="font-size: 0.9rem; opacity: 0.7;">/ 50</span>
+                </div>
+                <div style="background: rgba(245, 158, 11, 0.1); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.75rem;">
+                    <div style="background: #F59E0B; height: 100%; width: ${(transferScore/50)*100}%; transition: width 1s ease-out;"></div>
+                </div>
+                <div style="font-size: 0.85rem; opacity: 0.8;">
+                    <div>Kinetic Chain: <strong>${kineticChain}</strong></div>
+                    <div>Efficiency: <strong>${Math.round(efficiency)}%</strong></div>
+                </div>
+            `;
+            
+            // BALL Card (Outcomes)
+            const ballContent = document.getElementById('ballCardContent');
+            const batSpeed = report.ball?.exit_velocity?.bat_speed_mph || report.body?.actual?.estimated_bat_speed_mph || 0;
+            const exitVelo = report.ball?.exit_velocity?.exit_velo_mph || 0;
+            const contactQuality = report.ball?.contact_quality?.rating || 'Good';
+            
+            ballContent.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <div>
+                        <div style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 0.25rem;">Bat Speed</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #EF4444;">${Math.round(batSpeed)}<span style="font-size: 0.9rem; opacity: 0.7;">mph</span></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 0.25rem;">Exit Velo</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #EF4444;">${Math.round(exitVelo)}<span style="font-size: 0.9rem; opacity: 0.7;">mph</span></div>
+                    </div>
+                </div>
+                <div style="margin-top: 0.75rem; font-size: 0.85rem; opacity: 0.8;">
+                    Contact Quality: <strong>${contactQuality}</strong>
+                </div>
+            `;
         }
         
         function displayMotorProfile(profile) {

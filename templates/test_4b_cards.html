@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test 4B Cards - Catching Barrels</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #667eea;
+        }
+        
+        .result-card {
+            background: white;
+            color: #1f2937;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 1.5rem;
+        }
+        
+        .skeleton {
+            background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        .test-info {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid #10B981;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .test-info h2 {
+            color: #10B981;
+            margin: 0 0 0.5rem 0;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-right: 1rem;
+        }
+        
+        .btn:hover {
+            background: #5a67d8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 4B Cards Test Page</h1>
+        
+        <div class="test-info">
+            <h2>✅ Test Configuration</h2>
+            <p><strong>Session ID:</strong> test_cc58109c</p>
+            <p><strong>API Endpoint:</strong> /api/sessions/test_cc58109c/report</p>
+            <p><strong>Purpose:</strong> Verify 4B cards display correctly with real PlayerReport data</p>
+        </div>
+        
+        <button class="btn" onclick="loadReport()">Load Report & Show 4B Cards</button>
+        <button class="btn" onclick="location.reload()">Reset</button>
+        
+        <div id="status" style="margin: 2rem 0;"></div>
+        
+        <!-- KRS Hero Section -->
+        <div class="result-card" id="krsHeroCard" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 2rem;">
+                <div style="flex: 1;">
+                    <h2 style="color: white; margin-bottom: 1rem;">⭐ Kinetic Rotational Score</h2>
+                    <div id="krsHeroContent">
+                        <div style="font-size: 4rem; font-weight: 700; margin-bottom: 0.5rem;" id="krsTotal">--</div>
+                        <div style="font-size: 1.5rem; margin-bottom: 1rem;" id="krsLevel">--</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
+                            <div>
+                                <div style="opacity: 0.8;">Creation Score</div>
+                                <div style="font-size: 2rem; font-weight: 700;" id="krsCreation">--</div>
+                            </div>
+                            <div>
+                                <div style="opacity: 0.8;">Transfer Score</div>
+                                <div style="font-size: 2rem; font-weight: 700;" id="krsTransfer">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 4B Framework Breakdown -->
+        <div id="fourBCards" style="display: none;">
+            <h2 style="margin: 2rem 0 1rem; text-align: center; color: #667eea; font-size: 1.8rem;">
+                🎯 The 4B Framework: Your Swing Blueprint
+            </h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                
+                <!-- BRAIN Card -->
+                <div class="result-card" style="border-left: 4px solid #8B5CF6; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, transparent 100%);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div style="font-size: 2.5rem;">🧠</div>
+                        <div>
+                            <h3 style="margin: 0; color: #8B5CF6; font-size: 1.3rem;">BRAIN</h3>
+                            <p style="margin: 0; font-size: 0.9rem; opacity: 0.7;">Motor Profile</p>
+                        </div>
+                    </div>
+                    <div id="brainCardContent">
+                        <div class="skeleton" style="height: 80px; border-radius: 8px;"></div>
+                    </div>
+                </div>
+                
+                <!-- BODY Card -->
+                <div class="result-card" style="border-left: 4px solid #10B981; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, transparent 100%);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div style="font-size: 2.5rem;">💪</div>
+                        <div>
+                            <h3 style="margin: 0; color: #10B981; font-size: 1.3rem;">BODY</h3>
+                            <p style="margin: 0; font-size: 0.9rem; opacity: 0.7;">Creation</p>
+                        </div>
+                    </div>
+                    <div id="bodyCardContent">
+                        <div class="skeleton" style="height: 80px; border-radius: 8px;"></div>
+                    </div>
+                </div>
+                
+                <!-- BAT Card -->
+                <div class="result-card" style="border-left: 4px solid #F59E0B; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, transparent 100%);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div style="font-size: 2.5rem;">⚾</div>
+                        <div>
+                            <h3 style="margin: 0; color: #F59E0B; font-size: 1.3rem;">BAT</h3>
+                            <p style="margin: 0; font-size: 0.9rem; opacity: 0.7;">Transfer</p>
+                        </div>
+                    </div>
+                    <div id="batCardContent">
+                        <div class="skeleton" style="height: 80px; border-radius: 8px;"></div>
+                    </div>
+                </div>
+                
+                <!-- BALL Card -->
+                <div class="result-card" style="border-left: 4px solid #EF4444; background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, transparent 100%);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div style="font-size: 2.5rem;">🎯</div>
+                        <div>
+                            <h3 style="margin: 0; color: #EF4444; font-size: 1.3rem;">BALL</h3>
+                            <p style="margin: 0; font-size: 0.9rem; opacity: 0.7;">Outcomes</p>
+                        </div>
+                    </div>
+                    <div id="ballCardContent">
+                        <div class="skeleton" style="height: 80px; border-radius: 8px;"></div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        
+        <div id="debugInfo" style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; margin-top: 2rem; display: none;">
+            <h3 style="color: #667eea;">Debug Information</h3>
+            <pre id="debugContent" style="overflow-x: auto; font-size: 0.85rem;"></pre>
+        </div>
+    </div>
+    
+    <script>
+        async function loadReport() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '<p style="color: #F59E0B;">⏳ Loading report...</p>';
+            
+            try {
+                const response = await fetch('/api/sessions/test_cc58109c/report');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const report = await response.json();
+                
+                // Show debug info
+                document.getElementById('debugInfo').style.display = 'block';
+                document.getElementById('debugContent').textContent = JSON.stringify(report, null, 2);
+                
+                // Display KRS and 4B cards
+                displayKRS(report.krs);
+                display4BCards(report);
+                
+                statusDiv.innerHTML = '<p style="color: #10B981;">✅ Report loaded successfully!</p>';
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<p style="color: #EF4444;">❌ Error: ${error.message}</p>`;
+                console.error('Load error:', error);
+            }
+        }
+        
+        function displayKRS(krs) {
+            document.getElementById('krsHeroCard').style.display = 'block';
+            document.getElementById('krsTotal').textContent = Math.round(krs.total);
+            document.getElementById('krsLevel').textContent = `${krs.level} ${krs.emoji}`;
+            document.getElementById('krsCreation').textContent = Math.round(krs.creation_score);
+            document.getElementById('krsTransfer').textContent = Math.round(krs.transfer_score);
+        }
+        
+        function display4BCards(report) {
+            document.getElementById('fourBCards').style.display = 'block';
+            
+            // BRAIN Card
+            const brainContent = document.getElementById('brainCardContent');
+            const motorProfile = report.brain?.motor_profile || {};
+            const primary = motorProfile.primary || 'Unknown';
+            const confidence = motorProfile.primary_confidence || 0;
+            const tagline = motorProfile.tagline || '';
+            const summary = report.brain?.summary || 'Motor profile identified';
+            
+            brainContent.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="font-size: 1.5rem; font-weight: 700; color: #8B5CF6;">${primary}</span>
+                    <span style="background: rgba(139, 92, 246, 0.2); color: #8B5CF6; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">${Math.round(confidence)}%</span>
+                </div>
+                <p style="margin: 0; font-size: 0.95rem; opacity: 0.8;">${tagline}</p>
+                <p style="margin: 0.5rem 0 0; font-size: 0.85rem; color: #8B5CF6; font-weight: 600;">
+                    ${summary}
+                </p>
+            `;
+            
+            // BODY Card
+            const bodyContent = document.getElementById('bodyCardContent');
+            const creationScore = report.krs?.creation_score || 0;
+            const groundFlow = report.body?.ground_flow?.summary || report.body?.ground_flow?.status || 'Analyzing';
+            const engineFlow = report.body?.engine_flow?.summary || report.body?.engine_flow?.status || 'Analyzing';
+            
+            bodyContent.innerHTML = `
+                <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <span style="font-size: 2rem; font-weight: 700; color: #10B981;">${Math.round(creationScore)}</span>
+                    <span style="font-size: 0.9rem; opacity: 0.7;">/ 50</span>
+                </div>
+                <div style="background: rgba(16, 185, 129, 0.1); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.75rem;">
+                    <div style="background: #10B981; height: 100%; width: ${(creationScore/50)*100}%; transition: width 1s ease-out;"></div>
+                </div>
+                <div style="font-size: 0.85rem; opacity: 0.8;">
+                    <div>Ground Flow: <strong>${groundFlow}</strong></div>
+                    <div>Engine Flow: <strong>${engineFlow}</strong></div>
+                </div>
+            `;
+            
+            // BAT Card
+            const batContent = document.getElementById('batCardContent');
+            const transferScore = report.krs?.transfer_score || 0;
+            const kineticChain = report.bat?.kinetic_chain?.summary || 'Analyzing';
+            const efficiency = report.bat?.kinetic_chain?.transfer_efficiency || 0;
+            
+            batContent.innerHTML = `
+                <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <span style="font-size: 2rem; font-weight: 700; color: #F59E0B;">${Math.round(transferScore)}</span>
+                    <span style="font-size: 0.9rem; opacity: 0.7;">/ 50</span>
+                </div>
+                <div style="background: rgba(245, 158, 11, 0.1); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.75rem;">
+                    <div style="background: #F59E0B; height: 100%; width: ${(transferScore/50)*100}%; transition: width 1s ease-out;"></div>
+                </div>
+                <div style="font-size: 0.85rem; opacity: 0.8;">
+                    <div>Kinetic Chain: <strong>${kineticChain}</strong></div>
+                    <div>Efficiency: <strong>${Math.round(efficiency)}%</strong></div>
+                </div>
+            `;
+            
+            // BALL Card
+            const ballContent = document.getElementById('ballCardContent');
+            const batSpeed = report.ball?.exit_velocity?.bat_speed_mph || report.body?.actual?.estimated_bat_speed_mph || 0;
+            const exitVelo = report.ball?.exit_velocity?.exit_velo_mph || 0;
+            const contactQuality = report.ball?.contact_quality?.rating || 'Good';
+            
+            ballContent.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <div>
+                        <div style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 0.25rem;">Bat Speed</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #EF4444;">${Math.round(batSpeed)}<span style="font-size: 0.9rem; opacity: 0.7;">mph</span></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 0.25rem;">Exit Velo</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #EF4444;">${Math.round(exitVelo)}<span style="font-size: 0.9rem; opacity: 0.7;">mph</span></div>
+                    </div>
+                </div>
+                <div style="margin-top: 0.75rem; font-size: 0.85rem; opacity: 0.8;">
+                    Contact Quality: <strong>${contactQuality}</strong>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
