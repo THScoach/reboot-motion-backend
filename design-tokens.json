@@ -3,6 +3,59 @@
   "name": "Catching Barrels Design Tokens",
   "version": "1.0.0",
   "description": "Design tokens for Catching Barrels PWA - Clean Athletic Professional",
+  "krs": {
+    "scale": {
+      "min": { "value": "0", "type": "number", "description": "Minimum KRS score" },
+      "max": { "value": "100", "type": "number", "description": "Maximum KRS score" }
+    },
+    "levels": {
+      "foundation": {
+        "min": { "value": "0", "type": "number" },
+        "max": { "value": "40", "type": "number" },
+        "label": { "value": "FOUNDATION", "type": "string" },
+        "color": { "value": "#6B7280", "type": "color", "description": "Gray-500" }
+      },
+      "building": {
+        "min": { "value": "40", "type": "number" },
+        "max": { "value": "60", "type": "number" },
+        "label": { "value": "BUILDING", "type": "string" },
+        "color": { "value": "#3B82F6", "type": "color", "description": "Blue" }
+      },
+      "developing": {
+        "min": { "value": "60", "type": "number" },
+        "max": { "value": "75", "type": "number" },
+        "label": { "value": "DEVELOPING", "type": "string" },
+        "color": { "value": "#10B981", "type": "color", "description": "Green" }
+      },
+      "advanced": {
+        "min": { "value": "75", "type": "number" },
+        "max": { "value": "85", "type": "number" },
+        "label": { "value": "ADVANCED", "type": "string" },
+        "color": { "value": "#F59E0B", "type": "color", "description": "Amber" }
+      },
+      "elite": {
+        "min": { "value": "85", "type": "number" },
+        "max": { "value": "100", "type": "number" },
+        "label": { "value": "ELITE", "type": "string" },
+        "color": { "value": "#8B5CF6", "type": "color", "description": "Purple" }
+      }
+    },
+    "formula": {
+      "description": { "value": "KRS = (Creation × 0.4) + (Transfer × 0.6)", "type": "string" },
+      "creationWeight": { "value": "0.4", "type": "number" },
+      "transferWeight": { "value": "0.6", "type": "number" }
+    },
+    "subscores": {
+      "creation": {
+        "description": { "value": "Peak momentum / Physical capacity × 100", "type": "string" },
+        "scale": { "min": { "value": "0", "type": "number" }, "max": { "value": "100", "type": "number" } }
+      },
+      "transfer": {
+        "description": { "value": "Output bat speed / Peak momentum × 100", "type": "string" },
+        "scale": { "min": { "value": "0", "type": "number" }, "max": { "value": "100", "type": "number" } }
+      }
+    }
+  },
   "colors": {
     "background": {
       "primary": { "value": "#FAFAFA", "type": "color", "description": "Gray-50, main background" },
@@ -35,9 +88,29 @@
       "spinner": { "value": "#10B981", "type": "color", "description": "Success Green" },
       "slingshotter": { "value": "#F59E0B", "type": "color", "description": "Amber" },
       "whipper": { "value": "#EF4444", "type": "color", "description": "Red" },
-      "torquer": { "value": "#8B5CF6", "type": "color", "description": "Purple" },
-      "tilter": { "value": "#3B82F6", "type": "color", "description": "Blue" },
-      "hybrid": { "value": "#EC4899", "type": "color", "description": "Pink" }
+      "titan": { "value": "#8B5CF6", "type": "color", "description": "Purple" }
+    },
+    "fourB": {
+      "brain": {
+        "bg": { "value": "#EDE9FE", "type": "color", "description": "Light purple background" },
+        "text": { "value": "#7C3AED", "type": "color", "description": "Dark purple text" },
+        "icon": { "value": "#7C3AED", "type": "color", "description": "Dark purple icon" }
+      },
+      "body": {
+        "bg": { "value": "#DBEAFE", "type": "color", "description": "Light blue background" },
+        "text": { "value": "#2563EB", "type": "color", "description": "Dark blue text" },
+        "icon": { "value": "#2563EB", "type": "color", "description": "Dark blue icon" }
+      },
+      "bat": {
+        "bg": { "value": "#D1FAE5", "type": "color", "description": "Light green background" },
+        "text": { "value": "#059669", "type": "color", "description": "Dark green text" },
+        "icon": { "value": "#059669", "type": "color", "description": "Dark green icon" }
+      },
+      "ball": {
+        "bg": { "value": "#FEE2E2", "type": "color", "description": "Light red background" },
+        "text": { "value": "#DC2626", "type": "color", "description": "Dark red text" },
+        "icon": { "value": "#DC2626", "type": "color", "description": "Dark red icon" }
+      }
     }
   },
   "typography": {
@@ -46,6 +119,8 @@
       "mono": { "value": "'SF Mono', 'Roboto Mono', 'Courier New', monospace", "type": "fontFamily" }
     },
     "fontSize": {
+      "krs-score": { "value": "72px", "type": "dimension", "description": "KRS Hero score display" },
+      "krs-score-mobile": { "value": "56px", "type": "dimension", "description": "KRS Hero score on mobile" },
       "display-02": { "value": "96px", "type": "dimension", "description": "Extra large display" },
       "display-01": { "value": "80px", "type": "dimension", "description": "Large display" },
       "heading-01": { "value": "32px", "type": "dimension", "description": "Page titles" },
