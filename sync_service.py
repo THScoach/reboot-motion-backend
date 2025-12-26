@@ -129,6 +129,29 @@ class RebootMotionSync:
                 logger.error(f"Response: {e.response.text}")
             raise
     
+    def get_players(self) -> List[Dict[str, Any]]:
+        """
+        Get all players from Reboot Motion API without syncing to database.
+        
+        Returns:
+            List of player dictionaries from Reboot Motion API
+        """
+        logger.info("📋 Fetching players from Reboot Motion API...")
+        
+        try:
+            players_data = self._make_request('/players')
+            
+            if not isinstance(players_data, list):
+                logger.error(f"Expected list of players, got: {type(players_data)}")
+                return []
+            
+            logger.info(f"✅ Fetched {len(players_data)} players from Reboot Motion")
+            return players_data
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to fetch players from Reboot Motion: {e}")
+            raise
+    
     def sync_players(self, db: Session) -> int:
         """
         Sync all players from Reboot Motion API.
