@@ -83,9 +83,19 @@ print("=" * 70, file=sys.stderr)
 print("✅ ALL ROUTERS MOUNTED SUCCESSFULLY", file=sys.stderr)
 print("=" * 70, file=sys.stderr)
 
-# Serve the Coach Rick UI
+# Serve the Coach Rick UI (original route)
 @app.get("/coach-rick-ui", response_class=HTMLResponse)
 async def coach_rick_ui():
+    with open("templates/coach_rick_analysis.html", "r") as f:
+        return f.read()
+
+# Serve the Coach Rick Analysis UI (Phase 2 + Phase 3 enhanced version)
+@app.get("/coach-rick-analysis", response_class=HTMLResponse)
+async def coach_rick_analysis():
+    """
+    Coach Rick Analysis UI with KRS Hero Card and 4B Framework (Phase 2)
+    Includes error handling, loading states, and empty states (Phase 3)
+    """
     with open("templates/coach_rick_analysis.html", "r") as f:
         return f.read()
 
