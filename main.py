@@ -28,6 +28,9 @@ from coach_rick_api import router as coach_rick_router
 # Import Priority 12 enhancement
 from priority_12_api_enhancement import enhance_analysis_with_priority_10_11
 
+# Import Player Report routes (Phase 1 Week 3-4)
+from player_report_routes import router as player_report_router
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -56,6 +59,9 @@ app.include_router(reboot_lite_router, tags=["Reboot Lite"])
 
 # Include Coach Rick AI router
 app.include_router(coach_rick_router, tags=["Coach Rick AI"])
+
+# Include Player Report router (Phase 1 Week 3-4)
+app.include_router(player_report_router, tags=["Player Reports"])
 
 # Initialize database on startup
 @app.on_event("startup")
