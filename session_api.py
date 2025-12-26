@@ -15,6 +15,7 @@ Date: 2025-12-25
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
 import json
+import logging
 
 from session_storage import (
     get_session,
@@ -22,6 +23,9 @@ from session_storage import (
     get_player_sessions,
     get_krs_history,
 )
+
+# Setup logger
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # ROUTER
@@ -224,6 +228,54 @@ async def get_player_sessions_endpoint(
         'limit': limit,
         'offset': offset,
     }
+
+
+@router.get("/reboot/players/search")
+async def search_reboot_players(query: str) -> Dict[str, Any]:
+    """
+    Search for players in Reboot Motion database
+    
+    Args:
+        query: Search string (player name)
+        
+    Returns:
+        List of matching players (top 10)
+        
+    Example:
+        GET /api/reboot/players/search?query=Eric+Williams
+    """
+    from sync_service import RebootMotionSync
+    
+    try:
+        # Initialize Reboot Motion sync
+        sync = RebootMotionSync()
+        
+        # Get all players from Reboot Motion
+        players = sync.get_players()
+        
+        # Filter by name (case-insensitive)
+        query_lower = query.lower()
+        filtered = [
+            p for p in players
+            if query_lower in f"{p.get('first_name', '')} {p.get('last_name', '')}".lower()
+        ]
+        
+        # Return top 10 matches
+        return {
+            'query': query,
+            'count': len(filtered),
+            'players': filtered[:10]
+        }
+        
+    except Exception as e:
+        # If Reboot Motion API fails, return empty results
+        logger.error(f"Reboot Motion search failed: {e}")
+        return {
+            'query': query,
+            'count': 0,
+            'players': [],
+            'error': str(e)
+        }
 
 
 # ============================================================================

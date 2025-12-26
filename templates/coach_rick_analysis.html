@@ -556,6 +556,198 @@
             line-height: 1.7;
             font-style: italic;
         }
+        
+        /* ========================================
+           REBOOT MOTION INTEGRATION STYLES (NEW!)
+           ======================================== */
+        .reboot-integration-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 30px;
+            color: white;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.1);
+        }
+        
+        .reboot-integration-section h2 {
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+        
+        .player-search-box {
+            position: relative;
+            margin-top: 20px;
+        }
+        
+        .player-search-box input {
+            width: 100%;
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: box-shadow 0.2s;
+        }
+        
+        .player-search-box input:focus {
+            outline: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .player-results {
+            background: white;
+            color: #333;
+            border-radius: 12px;
+            margin-top: 10px;
+            max-height: 320px;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: none;
+        }
+        
+        .player-results.show {
+            display: block;
+        }
+        
+        .player-card {
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        
+        .player-card:last-child {
+            border-bottom: none;
+        }
+        
+        .player-card:hover {
+            background: #f5f5f5;
+        }
+        
+        .player-card strong {
+            font-size: 16px;
+            color: #1f2937;
+        }
+        
+        .player-card span {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .sessions-list {
+            background: white;
+            color: #333;
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .sessions-list h3 {
+            color: #1f2937;
+        }
+        
+        .session-card {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            border: 1px solid #e5e7eb;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .session-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+        }
+        
+        .session-info {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .session-info strong {
+            display: block;
+            font-size: 16px;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        
+        .session-info span {
+            display: inline-block;
+            font-size: 14px;
+            color: #6b7280;
+            margin-right: 16px;
+        }
+        
+        .session-card button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: background 0.2s, transform 0.2s;
+            white-space: nowrap;
+        }
+        
+        .session-card button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        
+        .session-card button:active {
+            transform: translateY(0);
+        }
+        
+        .upload-divider {
+            text-align: center;
+            position: relative;
+            margin: 40px 0;
+        }
+        
+        .upload-divider span {
+            background: white;
+            padding: 0 24px;
+            color: #9ca3af;
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .upload-divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e5e7eb;
+            z-index: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .session-card {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .session-card button {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -566,6 +758,33 @@
             <div class="coach-badge">
                 ✅ Powered by Advanced Motor Profile Analysis
             </div>
+        </div>
+        
+        <!-- ========================================
+             REBOOT MOTION INTEGRATION (NEW!)
+             ======================================== -->
+        <div class="reboot-integration-section">
+            <h2>🔄 Import from Reboot Motion</h2>
+            <p style="margin-top: 0.5rem; opacity: 0.9;">Search for a player and generate KRS reports from existing sessions</p>
+            
+            <!-- Player Search -->
+            <div class="player-search-box">
+                <input type="text" 
+                       id="playerSearch" 
+                       placeholder="Search player name..." 
+                       autocomplete="off" />
+                <div id="playerResults" class="player-results"></div>
+            </div>
+            
+            <!-- Sessions List (shows after player selected) -->
+            <div id="sessionsList" class="sessions-list" style="display:none;">
+                <h3 style="margin-bottom: 1rem;">Recent Sessions</h3>
+                <div id="sessionsContainer"></div>
+            </div>
+        </div>
+
+        <div class="upload-divider">
+            <span>OR UPLOAD VIDEO</span>
         </div>
         
         <!-- Input Section -->
@@ -1314,6 +1533,214 @@
                     <div class="coach-message-text">"${messages.encouragement}"</div>
                 </div>
             `;
+        }
+        
+        // ============================================================================
+        // REBOOT MOTION INTEGRATION (NEW!)
+        // ============================================================================
+        
+        // Player search with debouncing
+        let searchTimeout;
+        const playerSearchInput = document.getElementById('playerSearch');
+        const playerResultsDiv = document.getElementById('playerResults');
+        
+        playerSearchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            const query = e.target.value.trim();
+            
+            if (query.length < 2) {
+                playerResultsDiv.classList.remove('show');
+                return;
+            }
+            
+            // Debounce: wait 300ms after user stops typing
+            searchTimeout = setTimeout(() => {
+                searchPlayers(query);
+            }, 300);
+        });
+        
+        // Search players from Reboot Motion
+        async function searchPlayers(query) {
+            try {
+                const response = await fetch(`/api/reboot/players/search?query=${encodeURIComponent(query)}`);
+                
+                if (!response.ok) {
+                    console.error('Search failed:', response.status);
+                    return;
+                }
+                
+                const data = await response.json();
+                displayPlayerResults(data.players || []);
+                
+            } catch (error) {
+                console.error('Error searching players:', error);
+                playerResultsDiv.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #ef4444;">
+                        <strong>⚠️ Search Failed</strong>
+                        <p style="font-size: 14px; margin-top: 8px;">Unable to connect to Reboot Motion API</p>
+                    </div>
+                `;
+                playerResultsDiv.classList.add('show');
+            }
+        }
+        
+        // Display player search results
+        function displayPlayerResults(players) {
+            if (players.length === 0) {
+                playerResultsDiv.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #6b7280;">
+                        <strong>No players found</strong>
+                        <p style="font-size: 14px; margin-top: 8px;">Try a different search term</p>
+                    </div>
+                `;
+                playerResultsDiv.classList.add('show');
+                return;
+            }
+            
+            playerResultsDiv.innerHTML = players.map(p => `
+                <div class="player-card" onclick="loadPlayerSessions('${p.reboot_player_id || p.id}', '${p.first_name} ${p.last_name}')">
+                    <div>
+                        <strong>${p.first_name} ${p.last_name}</strong>
+                        <div style="font-size: 13px; color: #9ca3af; margin-top: 4px;">
+                            ${p.date_of_birth || 'Birth date not available'}
+                        </div>
+                    </div>
+                    <div style="color: #667eea; font-weight: 600;">→</div>
+                </div>
+            `).join('');
+            
+            playerResultsDiv.classList.add('show');
+        }
+        
+        // Load sessions for selected player
+        async function loadPlayerSessions(playerId, playerName) {
+            // Hide search results
+            playerResultsDiv.classList.remove('show');
+            
+            try {
+                const response = await fetch(`/api/players/${playerId}/sessions?limit=10`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                displaySessions(data.sessions || [], playerName, playerId);
+                
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                document.getElementById('sessionsList').style.display = 'block';
+                document.getElementById('sessionsContainer').innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #ef4444;">
+                        <strong>⚠️ Failed to Load Sessions</strong>
+                        <p style="font-size: 14px; margin-top: 8px;">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Display sessions with "Generate KRS Report" button
+        function displaySessions(sessions, playerName, playerId) {
+            const sessionsListDiv = document.getElementById('sessionsList');
+            const sessionsContainer = document.getElementById('sessionsContainer');
+            
+            if (sessions.length === 0) {
+                sessionsContainer.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: #6b7280;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
+                        <strong style="font-size: 18px; display: block; margin-bottom: 8px;">No Sessions Found</strong>
+                        <p style="font-size: 14px;">This player doesn't have any recorded sessions yet.</p>
+                    </div>
+                `;
+            } else {
+                sessionsContainer.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h4 style="margin: 0; color: #1f2937;">${playerName}'s Sessions</h4>
+                        <span style="font-size: 14px; color: #6b7280;">${sessions.length} session${sessions.length === 1 ? '' : 's'}</span>
+                    </div>
+                    ${sessions.map(s => `
+                        <div class="session-card">
+                            <div class="session-info">
+                                <strong>Session ${s.session_number}</strong>
+                                <span>📅 ${formatDate(s.session_date)}</span>
+                                ${s.krs_total ? `<span>⚡ KRS: ${s.krs_total.toFixed(1)}</span>` : ''}
+                                ${s.motor_profile_type ? `<span>🧠 ${s.motor_profile_type}</span>` : ''}
+                            </div>
+                            <button onclick="generateKRSFromReboot('${s.session_id}')">
+                                📊 Generate KRS Report
+                            </button>
+                        </div>
+                    `).join('')}
+                `;
+            }
+            
+            sessionsListDiv.style.display = 'block';
+            sessionsListDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        // Generate KRS Report from Reboot session
+        async function generateKRSFromReboot(sessionId) {
+            // Show loading spinner
+            document.getElementById('krsLoading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            
+            // Scroll to loading area
+            document.getElementById('krsLoading').scrollIntoView({ behavior: 'smooth' });
+            
+            try {
+                // Fetch session report from API
+                const response = await fetch(`/api/sessions/${sessionId}/report`);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch report: ${response.status}`);
+                }
+                
+                const report = await response.json();
+                
+                // Hide loading
+                document.getElementById('krsLoading').style.display = 'none';
+                
+                // Display using existing functions
+                document.getElementById('results').style.display = 'block';
+                
+                // Show KRS Hero Card and 4B Framework
+                displayKRS(report, sessionId);
+                display4BCards(report);
+                
+                // Display other sections if they exist
+                if (report.motor_profile) {
+                    displayMotorProfile(report.motor_profile);
+                }
+                
+                // Scroll to results
+                document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                console.error('Error generating KRS report:', error);
+                
+                // Hide loading
+                document.getElementById('krsLoading').style.display = 'none';
+                
+                // Show error
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('errorMessage').textContent = error.message || 'Failed to generate KRS Report. Please try again.';
+                document.getElementById('error').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        // Format date helper
+        function formatDate(dateStr) {
+            if (!dateStr) return 'N/A';
+            
+            try {
+                return new Date(dateStr).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            } catch {
+                return dateStr;
+            }
         }
     </script>
 </body>
