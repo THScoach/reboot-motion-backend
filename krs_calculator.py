@@ -1,394 +1,281 @@
 """
-Catching Barrels - KRS Calculator
-==================================
-
-KRS™ (Kinetic Realization Score) Calculation Engine
-
-KRS = (Creation Score + Transfer Score) / 2
-
-Creation Score: How much power you generate (Body)
-Transfer Score: How efficiently you deliver it (Bat)
-
-Author: Builder 2
-Date: 2025-12-25
+KRS Calculator Service
+Phase 1 Week 3-4: Priority 2
+Formula: KRS = (Creation × 0.4) + (Transfer × 0.6)
+Scale: 0-100
+Levels: FOUNDATION (0-40), BUILDING (40-60), DEVELOPING (60-75), ADVANCED (75-85), ELITE (85-100)
 """
 
-from typing import Dict, Tuple, Optional
-from player_report_schema import KRSLevel, DataSource, Confidence
+from typing import Dict, Optional
 
 
-# ============================================================================
-# KRS LEVEL THRESHOLDS
-# ============================================================================
-
-KRS_LEVELS = {
-    KRSLevel.FOUNDATION: (0, 40, "🌱"),    # 0-39
-    KRSLevel.BUILDING: (40, 60, "🔧"),     # 40-59
-    KRSLevel.DEVELOPING: (60, 75, "📈"),   # 60-74
-    KRSLevel.ADVANCED: (75, 90, "⭐"),     # 75-89
-    KRSLevel.ELITE: (90, 100, "🏆"),       # 90-100
-}
-
-
-def get_krs_level(krs: float) -> Tuple[KRSLevel, str, float]:
+def calculate_krs(creation: float, transfer: float) -> Dict[str, any]:
     """
-    Get KRS level, emoji, and points to next level
+    Calculate KRS from Creation and Transfer scores.
     
     Args:
-        krs: KRS score (0-100)
-        
+        creation: Creation score (0-100)
+        transfer: Transfer score (0-100)
+    
     Returns:
-        (level, emoji, points_to_next)
-    """
-    for level, (min_score, max_score, emoji) in KRS_LEVELS.items():
-        if min_score <= krs < max_score:
-            points_to_next = max_score - krs
-            return level, emoji, points_to_next
+        {
+            "krs_total": float,
+            "krs_level": str,
+            "creation": float,
+            "transfer": float,
+            "level_info": dict
+        }
     
-    # If krs >= 90, it's ELITE
-    return KRSLevel.ELITE, "🏆", 0.0
-
-
-# ============================================================================
-# CREATION SCORE CALCULATION
-# ============================================================================
-
-def calculate_creation_score(
-    ground_flow_score: float,  # 0-10
-    engine_flow_score: float,  # 0-10
-    bat_speed_mph: Optional[float] = None,
-    player_weight_lbs: Optional[float] = None,
-    player_height_inches: Optional[float] = None,
-) -> float:
-    """
-    Calculate Creation Score (0-100)
-    
-    Creation = How much power you generate in your body
-    
-    Components:
-    - Ground Flow (40%): Stance, load, stride, plant
-    - Engine Flow (40%): Pelvis, hips, torso, sequencing
-    - Physical Capacity (20%): Size, strength, athleticism
-    
-    Args:
-        ground_flow_score: Ground flow score (0-10)
-        engine_flow_score: Engine flow score (0-10)
-        bat_speed_mph: Actual bat speed (if available)
-        player_weight_lbs: Player weight
-        player_height_inches: Player height
+    Examples:
+        >>> calculate_krs(74.8, 69.5)
+        {'krs_total': 71.6, 'krs_level': 'ADVANCED', ...}
         
-    Returns:
-        Creation score (0-100)
+        >>> calculate_krs(80, 90)
+        {'krs_total': 86.0, 'krs_level': 'ELITE', ...}
+        
+        >>> calculate_krs(50, 60)
+        {'krs_total': 56.0, 'krs_level': 'BUILDING', ...}
     """
+    # Validate inputs
+    if not (0 <= creation <= 100):
+        raise ValueError(f"Creation score must be 0-100, got {creation}")
+    if not (0 <= transfer <= 100):
+        raise ValueError(f"Transfer score must be 0-100, got {transfer}")
     
-    # Convert 0-10 scores to 0-100
-    ground_contribution = (ground_flow_score / 10) * 100 * 0.4
-    engine_contribution = (engine_flow_score / 10) * 100 * 0.4
+    # Calculate KRS using weighted formula
+    krs_total = (creation * 0.4) + (transfer * 0.6)
     
-    # Physical capacity estimation (simplified)
-    capacity_contribution = 0
-    if player_weight_lbs and player_height_inches:
-        # Normalize by typical values (72", 185 lbs)
-        weight_factor = player_weight_lbs / 185.0
-        height_factor = player_height_inches / 72.0
-        capacity_factor = (weight_factor + height_factor) / 2
-        capacity_contribution = min(capacity_factor * 100, 100) * 0.2
+    # Determine level based on KRS total
+    if krs_total >= 85:
+        level = "ELITE"
+        level_info = {
+            "name": "ELITE",
+            "range": "85-100",
+            "color": "#8B5CF6",  # Purple
+            "description": "Elite performer with exceptional mechanics"
+        }
+    elif krs_total >= 75:
+        level = "ADVANCED"
+        level_info = {
+            "name": "ADVANCED",
+            "range": "75-85",
+            "color": "#06B6D4",  # Cyan
+            "description": "Advanced player with consistent high-quality mechanics"
+        }
+    elif krs_total >= 60:
+        level = "DEVELOPING"
+        level_info = {
+            "name": "DEVELOPING",
+            "range": "60-75",
+            "color": "#F59E0B",  # Amber
+            "description": "Developing player with solid fundamentals"
+        }
+    elif krs_total >= 40:
+        level = "BUILDING"
+        level_info = {
+            "name": "BUILDING",
+            "range": "40-60",
+            "color": "#475569",  # Gray
+            "description": "Building foundational movement patterns"
+        }
     else:
-        # Default to 50% if no physical data
-        capacity_contribution = 50 * 0.2
+        level = "FOUNDATION"
+        level_info = {
+            "name": "FOUNDATION",
+            "range": "0-40",
+            "color": "#1E293B",  # Dark Slate
+            "description": "Establishing fundamental movement patterns"
+        }
     
-    creation_score = ground_contribution + engine_contribution + capacity_contribution
-    
-    return min(max(creation_score, 0), 100)
+    return {
+        "krs_total": round(krs_total, 1),
+        "krs_level": level,
+        "creation": round(creation, 1),
+        "transfer": round(transfer, 1),
+        "level_info": level_info
+    }
 
 
-# ============================================================================
-# TRANSFER SCORE CALCULATION
-# ============================================================================
-
-def calculate_transfer_score(
-    kinetic_chain_score: float,  # 0-100
-    lead_leg_score: float,  # 0-100
-    timing_score: float,  # 0-100
-    weapon_score: Optional[float] = None,  # 0-100 (if available)
-) -> float:
+def calculate_on_table_gain(
+    current_exit_velo: float,
+    physical_capacity: float,
+    transfer_score: float
+) -> Optional[Dict[str, any]]:
     """
-    Calculate Transfer Score (0-100)
-    
-    Transfer = How efficiently you deliver power to the ball
-    
-    Components:
-    - Kinetic Chain (35%): Hip→shoulder sequencing, ratios
-    - Lead Leg (25%): Knee extension, stability, ground force
-    - Timing (25%): Pelvis-torso timing, attack angle
-    - Weapon (15%): Bat path, barrel control
+    Calculate On-Table Gain (exit velocity improvement with optimal mechanics).
     
     Args:
-        kinetic_chain_score: Kinetic chain efficiency (0-100)
-        lead_leg_score: Lead leg quality (0-100)
-        timing_score: Timing quality (0-100)
-        weapon_score: Weapon/bat path score (0-100, optional)
-        
-    Returns:
-        Transfer score (0-100)
-    """
-    
-    chain_contribution = kinetic_chain_score * 0.35
-    lead_leg_contribution = lead_leg_score * 0.25
-    timing_contribution = timing_score * 0.25
-    
-    # Weapon score (use if available, otherwise estimate from other scores)
-    if weapon_score is not None:
-        weapon_contribution = weapon_score * 0.15
-    else:
-        # Estimate weapon score from other components
-        estimated_weapon = (kinetic_chain_score + timing_score) / 2
-        weapon_contribution = estimated_weapon * 0.15
-    
-    transfer_score = (
-        chain_contribution +
-        lead_leg_contribution +
-        timing_contribution +
-        weapon_contribution
-    )
-    
-    return min(max(transfer_score, 0), 100)
-
-
-# ============================================================================
-# KRS CALCULATION
-# ============================================================================
-
-def calculate_krs(
-    creation_score: float,
-    transfer_score: float,
-    previous_krs: Optional[float] = None,
-    previous_creation: Optional[float] = None,
-    previous_transfer: Optional[float] = None,
-    data_source: DataSource = DataSource.VIDEO_ANALYSIS,
-) -> Dict:
-    """
-    Calculate complete KRS metrics
-    
-    Args:
-        creation_score: Creation score (0-100)
+        current_exit_velo: Current exit velocity (mph)
+        physical_capacity: Max physical capacity (mph)
         transfer_score: Transfer score (0-100)
-        previous_krs: Previous session's KRS (for trends)
-        previous_creation: Previous creation score
-        previous_transfer: Previous transfer score
-        data_source: Source of biomechanical data
-        
+    
     Returns:
-        Dict with KRS metrics
+        {
+            "value": float,  # e.g., 3.1
+            "metric": str,   # "mph"
+            "description": str
+        }
+    
+    Formula:
+        Potential improvement = (physical_capacity - current_exit_velo) * (1 - transfer_score/100)
+        On-table gain shows how much exit velo can be gained by improving transfer efficiency
     """
+    if not current_exit_velo or not physical_capacity or not transfer_score:
+        return None
     
-    # Calculate KRS total
-    krs_total = (creation_score + transfer_score) / 2
+    # Calculate potential gain based on transfer efficiency gap
+    efficiency_gap = 1 - (transfer_score / 100)  # e.g., 0.305 for transfer_score=69.5
+    potential_improvement = (physical_capacity - current_exit_velo) * efficiency_gap
     
-    # Get level and emoji
-    level, emoji, points_to_next = get_krs_level(krs_total)
-    
-    # Calculate changes (trends)
-    krs_change = krs_total - previous_krs if previous_krs is not None else 0
-    creation_change = creation_score - previous_creation if previous_creation is not None else 0
-    transfer_change = transfer_score - previous_transfer if previous_transfer is not None else 0
-    
-    # Determine confidence based on data source
-    confidence = {
-        DataSource.VIDEO_ANALYSIS: Confidence.STANDARD,
-        DataSource.ADVANCED_BIOMECHANICS: Confidence.ADVANCED,
-        DataSource.ELITE_LAB_SESSION: Confidence.ELITE,
-    }.get(data_source, Confidence.STANDARD)
+    # Only show gain if there's meaningful improvement potential
+    if potential_improvement < 0.5:
+        return None
     
     return {
-        "total": round(krs_total, 1),
-        "level": level,
-        "emoji": emoji,
-        "points_to_next_level": round(points_to_next, 1),
-        "creation_score": round(creation_score, 1),
-        "transfer_score": round(transfer_score, 1),
-        "krs_change": round(krs_change, 1),
-        "creation_change": round(creation_change, 1),
-        "transfer_change": round(transfer_change, 1),
-        "data_source": data_source,
-        "confidence": confidence,
+        "value": round(potential_improvement, 1),
+        "metric": "mph",
+        "description": "Exit velocity improvement with optimal mechanics"
     }
 
 
-# ============================================================================
-# HELPER FUNCTIONS
-# ============================================================================
-
-def estimate_capacity_bat_speed(
-    player_height_inches: float,
-    player_weight_lbs: float,
-    wingspan_inches: Optional[float] = None,
-) -> float:
+def get_krs_level_ranges() -> Dict[str, Dict[str, any]]:
     """
-    Estimate capacity bat speed based on anthropometrics
+    Get KRS level definitions for reference.
     
-    This is a simplified model. In production, use more sophisticated
-    biomechanical models.
-    
-    Args:
-        player_height_inches: Player height
-        player_weight_lbs: Player weight
-        wingspan_inches: Wingspan (optional)
-        
     Returns:
-        Estimated capacity bat speed (mph)
+        Dictionary of level definitions with ranges, colors, and descriptions
     """
-    
-    # Base capacity from weight (strength proxy)
-    weight_factor = player_weight_lbs / 185.0  # Normalize to average
-    base_capacity = 75 + (weight_factor - 1) * 10  # 75 mph baseline
-    
-    # Height/leverage adjustment
-    height_factor = player_height_inches / 72.0
-    leverage_bonus = (height_factor - 1) * 5
-    
-    # Wingspan bonus (if available)
-    wingspan_bonus = 0
-    if wingspan_inches:
-        ape_index = wingspan_inches - player_height_inches
-        if ape_index > 0:
-            wingspan_bonus = ape_index * 0.3  # ~0.3 mph per inch of positive ape
-    
-    capacity = base_capacity + leverage_bonus + wingspan_bonus
-    
-    return round(capacity, 1)
-
-
-def calculate_on_table_power(
-    capacity_bat_speed: float,
-    actual_bat_speed: float,
-) -> Dict:
-    """
-    Calculate power left "on the table"
-    
-    Args:
-        capacity_bat_speed: Theoretical max bat speed
-        actual_bat_speed: Actual bat speed
-        
-    Returns:
-        Dict with capacity, actual, and gap metrics
-    """
-    
-    gap_mph = capacity_bat_speed - actual_bat_speed
-    gap_percentage = (gap_mph / capacity_bat_speed) * 100 if capacity_bat_speed > 0 else 0
-    
     return {
-        "capacity_mph": round(capacity_bat_speed, 1),
-        "actual_mph": round(actual_bat_speed, 1),
-        "gap_mph": round(gap_mph, 1),
-        "gap_percentage": round(gap_percentage, 1),
-    }
-
-
-# ============================================================================
-# MAIN CALCULATOR
-# ============================================================================
-
-def calculate_full_krs_report(
-    # Current session metrics
-    ground_flow: float,
-    engine_flow: float,
-    kinetic_chain: float,
-    lead_leg: float,
-    timing: float,
-    bat_speed_mph: float,
-    
-    # Player info
-    player_height_inches: float,
-    player_weight_lbs: float,
-    wingspan_inches: Optional[float] = None,
-    
-    # Previous session (for trends)
-    previous_krs: Optional[float] = None,
-    previous_creation: Optional[float] = None,
-    previous_transfer: Optional[float] = None,
-    
-    # Data quality
-    data_source: DataSource = DataSource.VIDEO_ANALYSIS,
-) -> Dict:
-    """
-    Calculate complete KRS report with all metrics
-    
-    This is the main function to call for full KRS calculation.
-    
-    Returns:
-        Complete KRS metrics dict
-    """
-    
-    # Calculate Creation Score
-    creation = calculate_creation_score(
-        ground_flow_score=ground_flow,
-        engine_flow_score=engine_flow,
-        bat_speed_mph=bat_speed_mph,
-        player_weight_lbs=player_weight_lbs,
-        player_height_inches=player_height_inches,
-    )
-    
-    # Calculate Transfer Score
-    transfer = calculate_transfer_score(
-        kinetic_chain_score=kinetic_chain,
-        lead_leg_score=lead_leg,
-        timing_score=timing,
-    )
-    
-    # Calculate KRS
-    krs_metrics = calculate_krs(
-        creation_score=creation,
-        transfer_score=transfer,
-        previous_krs=previous_krs,
-        previous_creation=previous_creation,
-        previous_transfer=previous_transfer,
-        data_source=data_source,
-    )
-    
-    # Calculate capacity and gaps
-    capacity_speed = estimate_capacity_bat_speed(
-        player_height_inches=player_height_inches,
-        player_weight_lbs=player_weight_lbs,
-        wingspan_inches=wingspan_inches,
-    )
-    
-    on_table = calculate_on_table_power(
-        capacity_bat_speed=capacity_speed,
-        actual_bat_speed=bat_speed_mph,
-    )
-    
-    return {
-        **krs_metrics,
-        "capacity": {
-            "bat_speed_mph": capacity_speed,
+        "FOUNDATION": {
+            "min": 0,
+            "max": 40,
+            "color": "#1E293B",
+            "description": "Establishing fundamental movement patterns"
         },
-        "on_table": on_table,
+        "BUILDING": {
+            "min": 40,
+            "max": 60,
+            "color": "#475569",
+            "description": "Building foundational movement patterns"
+        },
+        "DEVELOPING": {
+            "min": 60,
+            "max": 75,
+            "color": "#F59E0B",
+            "description": "Developing player with solid fundamentals"
+        },
+        "ADVANCED": {
+            "min": 75,
+            "max": 85,
+            "color": "#06B6D4",
+            "description": "Advanced player with consistent high-quality mechanics"
+        },
+        "ELITE": {
+            "min": 85,
+            "max": 100,
+            "color": "#8B5CF6",
+            "description": "Elite performer with exceptional mechanics"
+        }
     }
 
 
-# ============================================================================
-# EXAMPLE USAGE
-# ============================================================================
-
-if __name__ == "__main__":
-    # Example: Calculate KRS for a player
-    result = calculate_full_krs_report(
-        ground_flow=7.2,
-        engine_flow=6.5,
-        kinetic_chain=65,
-        lead_leg=70,
-        timing=75,
-        bat_speed_mph=72.5,
-        player_height_inches=72,
-        player_weight_lbs=185,
-        wingspan_inches=74,
-    )
+def validate_krs_calculation(krs_data: dict) -> bool:
+    """
+    Validate KRS calculation results.
     
-    print("KRS Calculation Result:")
-    print(f"  KRS Total: {result['total']} {result['emoji']}")
-    print(f"  Level: {result['level'].value}")
-    print(f"  Creation: {result['creation_score']}")
-    print(f"  Transfer: {result['transfer_score']}")
-    print(f"  Capacity: {result['capacity']['bat_speed_mph']} mph")
-    print(f"  On Table: {result['on_table']['gap_mph']} mph")
+    Args:
+        krs_data: Output from calculate_krs()
+    
+    Returns:
+        True if valid, raises ValueError if invalid
+    """
+    required_keys = ['krs_total', 'krs_level', 'creation', 'transfer']
+    for key in required_keys:
+        if key not in krs_data:
+            raise ValueError(f"Missing required key: {key}")
+    
+    # Validate ranges
+    if not (0 <= krs_data['krs_total'] <= 100):
+        raise ValueError(f"krs_total out of range: {krs_data['krs_total']}")
+    if not (0 <= krs_data['creation'] <= 100):
+        raise ValueError(f"creation out of range: {krs_data['creation']}")
+    if not (0 <= krs_data['transfer'] <= 100):
+        raise ValueError(f"transfer out of range: {krs_data['transfer']}")
+    
+    # Validate level
+    valid_levels = ['FOUNDATION', 'BUILDING', 'DEVELOPING', 'ADVANCED', 'ELITE']
+    if krs_data['krs_level'] not in valid_levels:
+        raise ValueError(f"Invalid krs_level: {krs_data['krs_level']}")
+    
+    # Verify formula
+    expected_krs = round((krs_data['creation'] * 0.4) + (krs_data['transfer'] * 0.6), 1)
+    if abs(krs_data['krs_total'] - expected_krs) > 0.1:
+        raise ValueError(
+            f"KRS calculation mismatch. Expected {expected_krs}, got {krs_data['krs_total']}"
+        )
+    
+    return True
+
+
+# Test cases for validation
+if __name__ == "__main__":
+    print("Running KRS Calculator Tests...")
+    print("=" * 60)
+    
+    # Test Case 1: Creation=74.8, Transfer=69.5 → KRS≈71.6, DEVELOPING
+    test1 = calculate_krs(74.8, 69.5)
+    print(f"\nTest 1: Creation=74.8, Transfer=69.5")
+    print(f"  Result: KRS={test1['krs_total']}, Level={test1['krs_level']}")
+    assert test1['krs_total'] == 71.6, f"Expected 71.6, got {test1['krs_total']}"
+    assert test1['krs_level'] == 'DEVELOPING', f"Expected DEVELOPING, got {test1['krs_level']}"
+    print("  ✅ PASS")
+    
+    # Test Case 2: Creation=80, Transfer=90 → KRS=86, ELITE
+    test2 = calculate_krs(80, 90)
+    print(f"\nTest 2: Creation=80, Transfer=90")
+    print(f"  Result: KRS={test2['krs_total']}, Level={test2['krs_level']}")
+    assert test2['krs_total'] == 86.0, f"Expected 86.0, got {test2['krs_total']}"
+    assert test2['krs_level'] == 'ELITE', f"Expected ELITE, got {test2['krs_level']}"
+    print("  ✅ PASS")
+    
+    # Test Case 3: Creation=50, Transfer=60 → KRS=56, BUILDING
+    test3 = calculate_krs(50, 60)
+    print(f"\nTest 3: Creation=50, Transfer=60")
+    print(f"  Result: KRS={test3['krs_total']}, Level={test3['krs_level']}")
+    assert test3['krs_total'] == 56.0, f"Expected 56.0, got {test3['krs_total']}"
+    assert test3['krs_level'] == 'BUILDING', f"Expected BUILDING, got {test3['krs_level']}"
+    print("  ✅ PASS")
+    
+    # Test Case 4: Edge case - ELITE boundary (85)
+    test4 = calculate_krs(85, 85)
+    print(f"\nTest 4: Creation=85, Transfer=85 (ELITE boundary)")
+    print(f"  Result: KRS={test4['krs_total']}, Level={test4['krs_level']}")
+    assert test4['krs_total'] == 85.0, f"Expected 85.0, got {test4['krs_total']}"
+    assert test4['krs_level'] == 'ELITE', f"Expected ELITE, got {test4['krs_level']}"
+    print("  ✅ PASS")
+    
+    # Test Case 5: Edge case - ADVANCED boundary (75)
+    test5 = calculate_krs(75, 75)
+    print(f"\nTest 5: Creation=75, Transfer=75 (ADVANCED boundary)")
+    print(f"  Result: KRS={test5['krs_total']}, Level={test5['krs_level']}")
+    assert test5['krs_total'] == 75.0, f"Expected 75.0, got {test5['krs_total']}"
+    assert test5['krs_level'] == 'ADVANCED', f"Expected ADVANCED, got {test5['krs_level']}"
+    print("  ✅ PASS")
+    
+    # Test Case 6: On-Table Gain calculation
+    gain = calculate_on_table_gain(82, 95, 69.5)
+    print(f"\nTest 6: On-Table Gain")
+    print(f"  Current: 82 mph, Capacity: 95 mph, Transfer: 69.5")
+    print(f"  Result: +{gain['value']} {gain['metric']}")
+    assert gain['metric'] == 'mph', f"Expected 'mph', got {gain['metric']}"
+    assert 2.0 <= gain['value'] <= 5.0, f"Expected gain between 2-5 mph, got {gain['value']}"
+    print("  ✅ PASS")
+    
+    # Test Case 7: Validation
+    print(f"\nTest 7: Validation")
+    validate_krs_calculation(test1)
+    print("  ✅ PASS")
+    
+    print("\n" + "=" * 60)
+    print("✅ ALL TESTS PASSED!")
+    print("=" * 60)
