@@ -1,618 +1,472 @@
-# Screen 03: Report Screen
+# Screen 03: Report (Player Report)
 
-**Last Updated:** Dec 26, 2025  
-**Status:** ✅ COMPLETE  
-**Designer:** Builder 2  
-**Phase:** Phase 0 - Design (Day 2)
-
----
-
-## 📋 Overview
-
-The Report screen displays a comprehensive player analysis after video processing. It features:
-- **KRS Hero Section** with circular gauge
-- **4B Framework Cards** (Brain, Body, Bat, Ball) with tinted backgrounds
-- **11-Section Breakdown** with expandable details
-- **Coach Rick Messages** with actionable insights
-
-**User Flow:**
-Upload → Processing → **Report** → Drills (optional)
+**Screen Name**: Player Report  
+**Route**: `/report/[sessionId]`  
+**Complexity**: HIGH (Most complex screen - 11 sections)  
+**Priority**: P0 (Critical Path)
 
 ---
 
-## 🎨 Visual Hierarchy
-
-### Priority Levels
-1. **KRS Hero** - Primary focus, top of screen
-2. **4B Cards** - Secondary focus, grid layout
-3. **Section Breakdown** - Tertiary, scrollable list
-4. **Actions** - Bottom sticky CTA
-
----
-
-## 📐 Layout Structure
+## 📐 Layout Overview
 
 ```
 ┌─────────────────────────────────────┐
-│  Header                              │
-│  "Your Swing Report"                 │
-│  Player Name · Session Date          │
+│  ← Back                    Share 🔗 │ ← Header
 ├─────────────────────────────────────┤
-│                                      │
-│  ┌───────────────────────────────┐  │
-│  │   KRS HERO CARD               │  │
-│  │   Circular Gauge · Score      │  │
-│  │   ADVANCED                    │  │
-│  │   Progress to ELITE           │  │
-│  └───────────────────────────────┘  │
-│                                      │
-│  ┌─────────┐ ┌─────────┐           │
-│  │ BRAIN   │ │ BODY    │           │
-│  │ 88%     │ │ 82/50   │           │
-│  └─────────┘ └─────────┘           │
-│  ┌─────────┐ ┌─────────┐           │
-│  │ BAT     │ │ BALL    │           │
-│  │ 78/50   │ │ 75→85   │           │
-│  └─────────┘ └─────────┘           │
-│                                      │
-│  11-Section Breakdown                │
-│  ┌───────────────────────────────┐  │
-│  │ 1. Brain (Motor Profile)      │  │
-│  │ > Spinner · 88% confidence    │  │
-│  └───────────────────────────────┘  │
-│  ┌───────────────────────────────┐  │
-│  │ 2. Body (Creation)            │  │
-│  │ > Score: 82 · Good            │  │
-│  └───────────────────────────────┘  │
-│  [... 9 more sections ...]          │
-│                                      │
-│  [View Training Plan Button]        │
-│                                      │
+│                                     │
+│  ┌─────────────────────────────┐   │
+│  │   KRS HERO CARD             │   │ ← Section 1: KRS Hero
+│  │   [Circular Gauge 80]       │   │
+│  │   ADVANCED                  │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│  🎯 The 4B Framework               │ ← Section Header
+│  ┌──────┬──────┬──────┬──────┐    │
+│  │BRAIN │ BODY │ BAT  │ BALL │    │ ← Section 2-5: 4B Cards
+│  └──────┴──────┴──────┴──────┘    │
+│                                     │
+│  🎯 Quick Wins                     │ ← Section 6: Wins
+│  [Actionable insights cards]       │
+│                                     │
+│  🎯 Your Mission                   │ ← Section 7: Mission
+│  [Phase-specific goals]            │
+│                                     │
+│  💪 Drill Library                  │ ← Section 8: Drills
+│  [Personalized drill cards]        │
+│                                     │
+│  📊 Your Progress                  │ ← Section 9: Progress
+│  [Week streak, total swings]       │
+│                                     │
+│  🎙️ Coach Rick Says               │ ← Section 10: Coach Rick
+│  [Motivational message]            │
+│                                     │
+│  🚩 Flags & Insights              │ ← Section 11: Flags
+│  [Special insights, paradoxes]     │
+│                                     │
 └─────────────────────────────────────┘
-   Bottom Navigation (sticky)
 ```
 
 ---
 
-## 🎯 Component Specifications
+## 🎨 Section Breakdown
 
-### 1. KRS Hero Card
+### Section 1: KRS Hero Card
+**Component**: `KRSHeroCard`  
+**Height**: 240px  
+**Background**: Purple gradient (`gradient-primary`)
 
-**Dimensions:**
-- Width: 100% (max 800px)
-- Height: Auto (~300px)
-- Padding: 32px
-- Border radius: 24px
-
-**Background:**
-```css
-background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+```
+┌─────────────────────────────────────┐
+│  Kinetic Readiness Score (KRS)     │ ← Caption-01 • Gray-300
+│                                     │
+│        ┌───────────────┐           │
+│        │   Circular    │           │
+│        │   Gauge       │           │ ← 140px diameter
+│        │      80       │           │   Electric Cyan ring
+│        │  ADVANCED     │           │
+│        └───────────────┘           │
+│                                     │
+│  ┌──────────────┬──────────────┐   │
+│  │ Creation: 82 │ Transfer: 78 │   │ ← Split metrics
+│  │   +2 ↑       │   +1 ↑       │   │   Green arrows
+│  └──────────────┴──────────────┘   │
+│                                     │
+│  10 points to ELITE                │ ← Progress indicator
+│  ■■■■■■■■■□ 89%                    │
+└─────────────────────────────────────┘
 ```
 
-**Content:**
-```
-KRS Score: 80
-Level: ADVANCED
-Progress Bar: 80/90 (10 points to ELITE)
-Creation: 82 (+2 from last)
-Transfer: 78 (-1 from last)
-```
-
-**Typography:**
-- Score: 72px bold, white
-- Level: 24px semibold, white 80%
-- Labels: 14px medium, white 70%
-- Values: 20px semibold, white
-
-**Interactive:**
-- Tap to expand full KRS breakdown
-- Smooth 300ms transition
+**Details**:
+- Circular gauge: 140px diameter
+- Electric Cyan ring (#06B6D4) with opacity gradient
+- Score: Display-02 (96px bold)
+- Level: Heading-02 (24px medium)
+- Metrics: split 2-column layout
+- Change indicators: +2 ↑ in success-green
+- Progress bar: 8px height, rounded
 
 ---
 
-### 2. 4B Framework Cards
+### Section 2-5: 4B Framework Cards
+**Component**: `FourBGrid`  
+**Layout**: 4 columns on desktop, 2 on tablet, 1 on mobile
 
-**Grid Layout:**
-```css
-display: grid;
-grid-template-columns: repeat(2, 1fr);
-gap: 16px;
-margin: 24px 0;
+#### Brain Card
+```
+┌─────────────────────────┐
+│ 🧠 BRAIN               │ ← Heading-03 • Brand Cyan
+│ Motor & Timing         │ ← Caption-01 • Gray-400
+├─────────────────────────┤
+│                         │
+│ THE SPINNER            │ ← Heading-04 • Gray-900
+│ Quick hands, short path│ ← Body-02 • Gray-500
+│                         │
+│ Confidence: 88%        │ ← Body-02 with progress bar
+│ ■■■■■■■■■□             │   8px height
+│                         │
+│ Tempo: FAST (3.2:1)    │ ← Metric badge
+│ Status: ⭐ ELITE       │ ← Status badge green
+└─────────────────────────┘
 ```
 
-**Individual Card:**
-- Aspect ratio: 1:1.2
-- Border radius: 16px
+**Tint**: Soft cyan background (#06B6D4 at 5% opacity)
+
+#### Body Card
+```
+┌─────────────────────────┐
+│ 💪 BODY                │ ← Heading-03 • Success Green
+│ Power Creation         │ ← Caption-01 • Gray-400
+├─────────────────────────┤
+│                         │
+│ Creation Score: 82/100 │ ← Heading-04 • Gray-900
+│ ■■■■■■■■□□             │   Progress bar
+│                         │
+│ ⚡ Capacity             │
+│   150 KE (75 mph)      │ ← Body-02 • Gray-700
+│                         │
+│ 📊 On Table            │
+│   Gap: +30 KE          │ ← Body-02 • Gray-700
+│                         │
+│ Ground Flow: 7.5/10    │ ← Metric with badge
+│ Status: ✓ GOOD         │
+└─────────────────────────┘
+```
+
+**Tint**: Soft green background (#10B981 at 5% opacity)
+
+#### Bat Card
+```
+┌─────────────────────────┐
+│ ⚾ BAT                  │ ← Heading-03 • Warning Orange
+│ Power Transfer         │ ← Caption-01 • Gray-400
+├─────────────────────────┤
+│                         │
+│ Transfer Score: 78/100 │ ← Heading-04 • Gray-900
+│ ■■■■■■■■□□             │   Progress bar
+│                         │
+│ You Create: 75.6 mph   │ ← Body-02 • Gray-700
+│ You Transfer: 58.9 mph │
+│ Efficiency: 77.9%      │
+│                         │
+│ Weapon Path: ELITE     │ ← Status badge green
+│ Kinetic Chain: GOOD    │ ← Status badge amber
+└─────────────────────────┘
+```
+
+**Tint**: Soft orange background (#FF6B35 at 5% opacity)
+
+#### Ball Card
+```
+┌─────────────────────────┐
+│ ⚡ BALL                 │ ← Heading-03 • Electric Cyan
+│ Exit Outcomes          │ ← Caption-01 • Gray-400
+├─────────────────────────┤
+│                         │
+│ Bat Speed: 75 mph      │ ← Heading-04 • Gray-900
+│ Exit Velo: 85 mph      │
+│                         │
+│ 📊 MLB Comparison      │
+│   Bat Speed: 50th %ile │ ← Body-02 • Gray-700
+│   Exit Velo: 45th %ile │
+│                         │
+│ Status: ✓ GOOD         │ ← Status badge amber
+└─────────────────────────┘
+```
+
+**Tint**: Soft cyan background (#06B6D4 at 5% opacity)
+
+---
+
+### Section 6: Quick Wins
+**Component**: `QuickWinsSection`  
+**Layout**: Vertical stack of action cards
+
+```
+┌─────────────────────────────────────┐
+│  🎯 Quick Wins                     │ ← Heading-02
+│  Top 3 things to work on today     │ ← Body-02 • Gray-500
+│                                     │
+│  ┌─────────────────────────────┐   │
+│  │ 1. Improve Ground Contact   │   │ ← Action card
+│  │    +5 points to Creation    │   │
+│  │    [View Drills →]          │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│  ┌─────────────────────────────┐   │
+│  │ 2. Optimize Kinetic Chain   │   │
+│  │    +3 points to Transfer    │   │
+│  │    [View Drills →]          │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│  ┌─────────────────────────────┐   │
+│  │ 3. Maintain Tempo Control   │   │
+│  │    Lock in Fast tempo       │   │
+│  │    [View Drills →]          │   │
+│  └─────────────────────────────┘   │
+└─────────────────────────────────────┘
+```
+
+**Card Specs**:
+- White background with shadow-01
+- Left border: 4px solid Electric Cyan
+- Padding: 16px
+- Gap between cards: 12px
+
+---
+
+### Section 7: Your Mission
+**Component**: `MissionSection`  
+**Layout**: Single card with progress tracking
+
+```
+┌─────────────────────────────────────┐
+│  🎯 Your Mission                   │ ← Heading-02
+│  Phase 1: Foundation Building      │ ← Body-02 • Gray-500
+│                                     │
+│  ┌─────────────────────────────┐   │
+│  │                             │   │
+│  │  Current Phase: FOUNDATION  │   │ ← Heading-03
+│  │  40 swings remaining        │   │ ← Body-02
+│  │                             │   │
+│  │  ■■■■■□□□□□ 20%            │   │ ← Progress bar
+│  │                             │   │
+│  │  📊 Goals:                  │   │
+│  │  • 50 total swings          │   │
+│  │  • Establish motor profile  │   │
+│  │  • Unlock detailed report   │   │
+│  │                             │   │
+│  │  [Continue Training →]      │   │ ← Primary button
+│  └─────────────────────────────┘   │
+└─────────────────────────────────────┘
+```
+
+---
+
+### Section 8: Drill Library
+**Component**: `DrillLibrarySection`  
+**Layout**: Horizontal scroll (mobile), grid (desktop)
+
+```
+┌─────────────────────────────────────┐
+│  💪 Drill Library                  │ ← Heading-02
+│  Personalized for your profile     │ ← Body-02 • Gray-500
+│                                     │
+│  ┌──────┐ ┌──────┐ ┌──────┐       │
+│  │Drill │ │Drill │ │Drill │       │ ← Drill cards
+│  │  1   │ │  2   │ │  3   │       │   160px × 200px
+│  │      │ │      │ │      │       │
+│  │[View]│ │[View]│ │[View]│       │
+│  └──────┘ └──────┘ └──────┘       │
+└─────────────────────────────────────┘
+```
+
+**Drill Card Specs**:
+- 160px × 200px
+- White background with shadow-01
+- Thumbnail: 160px × 100px (16:10)
+- Title: Body-01 semibold
+- Duration: Caption-01
+- Difficulty badge: Caption-01 in pill
+
+---
+
+### Section 9: Your Progress
+**Component**: `ProgressSection`  
+**Layout**: Stats grid
+
+```
+┌─────────────────────────────────────┐
+│  📊 Your Progress                  │ ← Heading-02
+│  Keep the momentum going           │ ← Body-02 • Gray-500
+│                                     │
+│  ┌──────────┬──────────┬──────────┐│
+│  │   10     │    1     │    0     ││ ← Stats grid
+│  │  swings  │   week   │   days   ││   3 columns
+│  │  total   │  streak  │   since  ││
+│  └──────────┴──────────┴──────────┘│
+│                                     │
+│  Week 1: ●●●○○○○                   │ ← Week dots
+│  Last swing: 2 hours ago           │ ← Timestamp
+└─────────────────────────────────────┘
+```
+
+---
+
+### Section 10: Coach Rick Says
+**Component**: `CoachRickSection`  
+**Layout**: Message card with avatar
+
+```
+┌─────────────────────────────────────┐
+│  🎙️ Coach Rick Says               │ ← Heading-02
+│                                     │
+│  ┌─────────────────────────────┐   │
+│  │  [👤 Avatar]                │   │ ← 48px avatar
+│  │                             │   │
+│  │  "Great work today! Your    │   │ ← Body-01
+│  │   tempo control is locked   │   │   Message text
+│  │   in. Focus on maintaining  │   │
+│  │   that ground connection."  │   │
+│  │                             │   │
+│  │  - Coach Rick              │   │ ← Caption-01 • Gray-400
+│  └─────────────────────────────┘   │
+└─────────────────────────────────────┘
+```
+
+**Card Specs**:
+- Light cyan background (#06B6D4 at 3% opacity)
+- Left border: 4px solid Electric Cyan
+- Avatar: 48px circle
 - Padding: 20px
-- Box shadow: 0 2px 8px rgba(0,0,0,0.04)
-
-**Card Colors:**
-```css
-/* Brain Card */
-background: linear-gradient(135deg, #10b981 0%, rgba(16, 185, 129, 0.1) 100%);
-border-left: 4px solid #10b981;
-
-/* Body Card */
-background: linear-gradient(135deg, #3b82f6 0%, rgba(59, 130, 246, 0.1) 100%);
-border-left: 4px solid #3b82f6;
-
-/* Bat Card */
-background: linear-gradient(135deg, #f59e0b 0%, rgba(245, 158, 11, 0.1) 100%);
-border-left: 4px solid #f59e0b;
-
-/* Ball Card */
-background: linear-gradient(135deg, #ef4444 0%, rgba(239, 68, 68, 0.1) 100%);
-border-left: 4px solid #ef4444;
-```
-
-**Content Structure:**
-```
-Icon (24×24)
-Label (12px uppercase, 60% opacity)
-Primary Metric (32px bold)
-Secondary Metric (16px regular)
-Progress Bar (optional, 4px height)
-Status Badge (12px, rounded)
-```
-
-**Example: BRAIN Card**
-```
-🧠 Icon
-BRAIN
-Spinner
-88% confidence
-[Status: ELITE badge, green]
-```
-
-**Example: BODY Card**
-```
-💪 Icon
-BODY
-82/50
-Creation Score
-[Progress bar: 82/100]
-[Status: GOOD badge, blue]
-```
 
 ---
 
-### 3. Section Breakdown List
+### Section 11: Flags & Insights
+**Component**: `FlagsSection`  
+**Layout**: Vertical stack of insight cards
 
-**Container:**
-```css
-margin-top: 32px;
-display: flex;
-flex-direction: column;
-gap: 12px;
+```
+┌─────────────────────────────────────┐
+│  🚩 Flags & Special Insights       │ ← Heading-02
+│                                     │
+│  ┌─────────────────────────────┐   │
+│  │ ⚠️ Power Paradox Detected   │   │ ← Warning card
+│  │                             │   │
+│  │ You're creating 150 KE but  │   │ ← Body-02
+│  │ only using 120 KE. Focus on │   │
+│  │ transfer efficiency.        │   │
+│  │                             │   │
+│  │ Potential gain: +5 mph EV   │   │ ← Highlight
+│  └─────────────────────────────┘   │
+│                                     │
+│  ┌─────────────────────────────┐   │
+│  │ ✨ Special Insight          │   │ ← Info card
+│  │                             │   │
+│  │ Your Fast tempo puts you in │   │
+│  │ the top 20% of players.     │   │
+│  │ Elite comp: Teoscar, JRod.  │   │
+│  └─────────────────────────────┘   │
+└─────────────────────────────────────┘
 ```
 
-**Section Card:**
-```css
-background: white;
-border: 1px solid #e5e7eb;
-border-radius: 12px;
-padding: 20px;
-cursor: pointer;
-transition: all 200ms ease;
-
-&:hover {
-  border-color: #06b6d4;
-  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.1);
-}
-```
-
-**Header Row:**
-```
-┌────────────────────────────────────┐
-│ [Icon] Section Name       [Arrow]  │
-│        Status Badge                │
-└────────────────────────────────────┘
-```
-
-**Typography:**
-- Section number: 16px bold, #06b6d4
-- Section name: 18px semibold, #111827
-- Status badge: 12px medium, colored
-- Summary: 14px regular, #6b7280
-
-**Expanded State:**
-```
-┌────────────────────────────────────┐
-│ [Icon] Section Name       [Arrow↓] │
-│        Status Badge                │
-├────────────────────────────────────┤
-│ Key Metrics:                       │
-│ • Metric 1: Value                  │
-│ • Metric 2: Value                  │
-│ • Metric 3: Value                  │
-│                                    │
-│ Insights:                          │
-│ "Detailed analysis text..."        │
-│                                    │
-│ [View Full Details →]              │
-└────────────────────────────────────┘
-```
+**Card Types**:
+- Warning: Amber background, amber left border
+- Info: Cyan background, cyan left border
+- Success: Green background, green left border
 
 ---
 
-### 4. Sticky CTA Button
+## 🎨 Visual Specifications
 
-**Position:**
-```css
-position: sticky;
-bottom: 80px; /* above bottom nav */
-left: 16px;
-right: 16px;
-z-index: 10;
-```
+### Colors
+- **Background**: Gray-50 (#FAFAFA)
+- **Cards**: White (#FFFFFF) with shadow-01
+- **Primary**: Electric Cyan (#06B6D4)
+- **Section headers**: Gray-900 (#111827)
 
-**Button Style:**
-```css
-width: calc(100% - 32px);
-max-width: 400px;
-margin: 0 auto;
-height: 56px;
-background: #06b6d4;
-color: white;
-border-radius: 16px;
-font-size: 16px;
-font-weight: 600;
-box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
-```
+### Spacing
+- **Section gap**: 32px
+- **Card gap**: 16px
+- **Card padding**: 20px
+- **Grid gap**: 12px
 
-**States:**
-- Default: Primary blue
-- Hover: Darken 10%
-- Active: Scale 0.98
-- Disabled: 40% opacity
+### Shadows
+- **Cards**: `shadow-01` (0 1px 3px rgba(0,0,0,0.1))
+- **Elevated**: `shadow-02` (0 4px 6px rgba(0,0,0,0.1))
 
-**Text:**
-- Primary CTA: "View Training Plan"
-- Secondary: "Share Report" (ghost style)
+### Border Radius
+- **Cards**: 12px
+- **Badges**: 6px
+- **Buttons**: 8px
 
 ---
 
 ## 📱 Responsive Behavior
 
-### Mobile (375px)
-- KRS Hero: Full width, 300px height
-- 4B Cards: 2×2 grid, equal height
-- Section list: Single column, 16px padding
-- Sticky CTA: 16px margin, full width
-
-### Tablet (768px)
-- KRS Hero: Max 600px centered
-- 4B Cards: 2×2 grid, larger cards
-- Section list: Max 700px centered
-- Sticky CTA: Max 400px centered
-
 ### Desktop (1024px+)
-- KRS Hero: Max 800px centered
-- 4B Cards: 4 in a row (optional)
-- Section list: Max 800px centered
-- Sticky CTA: Max 400px centered
+- 4B Grid: 4 columns (1fr 1fr 1fr 1fr)
+- Drill Library: 4 columns
+- Stats Grid: 3 columns
+- Max width: 1200px centered
+
+### Tablet (768px - 1023px)
+- 4B Grid: 2 columns (1fr 1fr)
+- Drill Library: 3 columns
+- Stats Grid: 3 columns
+- Max width: 768px
+
+### Mobile (< 768px)
+- 4B Grid: 1 column (stack)
+- Drill Library: Horizontal scroll
+- Stats Grid: 3 columns (compact)
+- Full width with 16px padding
 
 ---
 
-## 🎬 Animations & Transitions
+## 🔄 Interactions
 
-### Page Load
-```css
-/* Fade in from bottom */
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+### Scroll Behavior
+- **Sticky header**: Back button and Share remain visible
+- **Lazy load**: Sections load as user scrolls
+- **Scroll to top**: FAB appears after 500px scroll
 
-.report-section {
-  animation: slideUp 300ms ease-out;
-  animation-fill-mode: both;
-}
+### Actions
+- **Share button**: Opens native share sheet
+- **Drill cards**: Navigate to drill detail page
+- **View Drills CTA**: Navigate to drills library filtered by recommendation
+- **Continue Training**: Navigate to Live Mode or Upload
 
-/* Stagger children */
-.report-section:nth-child(1) { animation-delay: 0ms; }
-.report-section:nth-child(2) { animation-delay: 50ms; }
-.report-section:nth-child(3) { animation-delay: 100ms; }
-```
-
-### KRS Gauge Fill
-```css
-@keyframes gaugeFill {
-  from {
-    stroke-dashoffset: 283; /* full circumference */
-  }
-  to {
-    stroke-dashoffset: calc(283 * (1 - var(--score) / 100));
-  }
-}
-
-.gauge-progress {
-  animation: gaugeFill 1000ms ease-out 300ms both;
-}
-```
-
-### Section Expand
-```css
-.section-details {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 300ms ease;
-}
-
-.section-details.expanded {
-  max-height: 500px;
-}
-```
-
-### 4B Card Hover
-```css
-.four-b-card {
-  transition: all 200ms ease;
-}
-
-.four-b-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-}
-```
-
----
-
-## 🎨 Color System
-
-### KRS Hero
-```css
---krs-gradient-start: #667eea;
---krs-gradient-end: #764ba2;
---krs-text-primary: #ffffff;
---krs-text-secondary: rgba(255, 255, 255, 0.8);
---krs-accent: #fbbf24;
-```
-
-### 4B Cards
-```css
---brain-primary: #10b981;
---brain-bg: rgba(16, 185, 129, 0.08);
-
---body-primary: #3b82f6;
---body-bg: rgba(59, 130, 246, 0.08);
-
---bat-primary: #f59e0b;
---bat-bg: rgba(245, 158, 11, 0.08);
-
---ball-primary: #ef4444;
---ball-bg: rgba(239, 68, 68, 0.08);
-```
-
-### Status Badges
-```css
---status-elite: #10b981;
---status-good: #3b82f6;
---status-needs-work: #f59e0b;
---status-critical: #ef4444;
-```
-
----
-
-## 🔢 Data Display Rules
-
-### Score Formatting
-```javascript
-// KRS Total Score
-const formatKRS = (score) => {
-  return Math.round(score * 10) / 10; // 79.9
-};
-
-// Percentage
-const formatPercent = (value) => {
-  return `${Math.round(value)}%`; // 88%
-};
-
-// Ratio
-const formatRatio = (current, max) => {
-  return `${current}/${max}`; // 82/50
-};
-
-// Velocity
-const formatVelocity = (value) => {
-  return `${Math.round(value)} mph`; // 75 mph
-};
-
-// Change Indicator
-const formatChange = (change) => {
-  if (change > 0) return `+${change}`;
-  if (change < 0) return `${change}`;
-  return '—';
-};
-```
-
-### Status Determination
-```javascript
-const getStatus = (score) => {
-  if (score >= 85) return 'ELITE';
-  if (score >= 70) return 'GOOD';
-  if (score >= 50) return 'NEEDS_WORK';
-  return 'CRITICAL';
-};
-
-const getStatusColor = (status) => {
-  return {
-    'ELITE': '#10b981',
-    'GOOD': '#3b82f6',
-    'NEEDS_WORK': '#f59e0b',
-    'CRITICAL': '#ef4444'
-  }[status];
-};
-```
+### Loading States
+- **Initial load**: Skeleton for all sections
+- **Section load**: Individual skeletons per section
+- **Error state**: Retry button per section
 
 ---
 
 ## ♿ Accessibility
 
-### Semantic HTML
-```html
-<main role="main" aria-label="Player Report">
-  <section aria-labelledby="krs-heading">
-    <h2 id="krs-heading">KRS Score</h2>
-    <!-- KRS Hero content -->
-  </section>
-  
-  <section aria-labelledby="framework-heading">
-    <h2 id="framework-heading">4B Framework</h2>
-    <div role="list">
-      <article role="listitem" aria-label="Brain Score">
-        <!-- Brain card -->
-      </article>
-      <!-- ... other cards -->
-    </div>
-  </section>
-  
-  <section aria-labelledby="breakdown-heading">
-    <h2 id="breakdown-heading">Complete Analysis</h2>
-    <!-- Section list -->
-  </section>
-</main>
-```
+### Focus Management
+- **Skip to content**: Jump to first section
+- **Section navigation**: Jump links to each section
+- **Keyboard nav**: Tab through all interactive elements
 
-### Screen Reader Support
-```html
-<!-- KRS Gauge -->
-<div role="img" aria-label="KRS Score: 80 out of 100, Advanced level">
-  <svg><!-- gauge visual --></svg>
-</div>
+### Screen Reader
+- **Section landmarks**: `<section>` with `aria-label`
+- **Heading hierarchy**: H1 (page title) → H2 (sections) → H3 (subsections)
+- **Progress bars**: `aria-valuenow`, `aria-valuemin`, `aria-valuemax`
+- **Status badges**: `aria-label` with full status text
 
-<!-- Progress Bars -->
-<div role="progressbar" 
-     aria-valuenow="82" 
-     aria-valuemin="0" 
-     aria-valuemax="100"
-     aria-label="Body creation score">
-  <div class="progress-fill"></div>
-</div>
-
-<!-- Expandable Sections -->
-<button aria-expanded="false" 
-        aria-controls="section-brain-details">
-  Brain (Motor Profile)
-</button>
-<div id="section-brain-details" hidden>
-  <!-- Details content -->
-</div>
-```
-
-### Keyboard Navigation
-- Tab order: Header → KRS Hero → 4B Cards → Sections → CTA
-- Enter/Space: Expand/collapse sections
-- Esc: Collapse all sections
-- Arrow keys: Navigate between 4B cards
+### Visual
+- **Contrast**: All text meets WCAG AA (4.5:1)
+- **Focus visible**: 2px Electric Cyan outline
+- **Color not sole indicator**: Icons + text for status
 
 ---
 
-## 📊 Data Schema Integration
+## 📊 Data Requirements
 
-### PlayerReport API Response
+### API Endpoint
+```
+GET /api/sessions/{sessionId}/report
+```
+
+### Response Schema
 ```typescript
 interface PlayerReport {
   session_id: string;
-  player_info: {
-    player_id: string;
-    name: string;
-    age: number;
-    height_inches: number;
-    weight_lbs: number;
-  };
-  krs: {
-    total: number;
-    level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'ELITE';
-    creation_score: number;
-    transfer_score: number;
-    creation_change?: number;
-    transfer_change?: number;
-  };
-  brain: {
-    motor_profile: {
-      primary: string;
-      confidence: number;
-      display_name: string;
-      tagline: string;
-      color: string;
-    };
-    timing: {
-      tempo_rating: string;
-    };
-  };
-  body: {
-    creation_score: number;
-    capacity: {
-      estimated_bat_speed_mph: number;
-    };
-    ground_flow: {
-      score: number;
-    };
-    engine_flow: {
-      score: number;
-    };
-  };
-  bat: {
-    transfer_score: number;
-    flow: {
-      you_create_mph: number;
-      you_transfer_mph: number;
-    };
-  };
-  ball: {
-    exit_velocity: {
-      bat_speed_mph: number;
-      exit_velo_mph: number;
-    };
-  };
-  // ... additional sections
+  player_info: PlayerInfo;
+  progress: Progress;
+  krs: KRSScore;
+  brain: Brain;
+  body: Body;
+  bat: Bat;
+  ball: Ball;
+  wins: QuickWin[];
+  mission: Mission;
+  drills: Drill[];
+  coach_rick: CoachMessage;
+  flags: Flags;
 }
-```
-
-### Mapping to UI
-```javascript
-// KRS Hero
-<KRSHero
-  score={report.krs.total}
-  level={report.krs.level}
-  creation={report.krs.creation_score}
-  transfer={report.krs.transfer_score}
-  creationChange={report.krs.creation_change}
-  transferChange={report.krs.transfer_change}
-/>
-
-// 4B Cards
-<BrainCard
-  motorProfile={report.brain.motor_profile.primary}
-  confidence={report.brain.motor_profile.confidence}
-  displayName={report.brain.motor_profile.display_name}
-  color={report.brain.motor_profile.color}
-/>
-
-<BodyCard
-  score={report.body.creation_score}
-  capacity={report.body.capacity.estimated_bat_speed_mph}
-  groundFlow={report.body.ground_flow.score}
-  engineFlow={report.body.engine_flow.score}
-/>
-
-<BatCard
-  score={report.bat.transfer_score}
-  created={report.bat.flow.you_create_mph}
-  transferred={report.bat.flow.you_transfer_mph}
-/>
-
-<BallCard
-  batSpeed={report.ball.exit_velocity.bat_speed_mph}
-  exitVelo={report.ball.exit_velocity.exit_velo_mph}
-/>
 ```
 
 ---
@@ -620,114 +474,95 @@ interface PlayerReport {
 ## 🎯 Success Metrics
 
 ### Performance
-- Initial render: <200ms
-- KRS gauge animation: 1000ms
-- Section expand: <300ms
-- Smooth 60fps scrolling
+- **Initial load**: < 2s
+- **Section render**: < 100ms per section
+- **Smooth scroll**: 60 FPS
 
 ### User Engagement
-- Time on Report: >2 minutes
-- Section expansions: ≥3 per session
-- CTA clicks: >40%
-- Share rate: >15%
-
-### Accessibility
-- Lighthouse Accessibility: >95
-- Keyboard navigable: ✅
-- Screen reader compatible: ✅
-- Color contrast: AAA
+- **Time on page**: > 2 minutes
+- **Scroll depth**: > 70%
+- **CTA clicks**: > 40% (View Drills, Continue Training)
 
 ---
 
-## 🚀 Implementation Priority
-
-1. **Phase 1: Core Structure**
-   - Layout scaffold
-   - KRS Hero card
-   - 4B card grid
-   - Section list
-
-2. **Phase 2: Interactions**
-   - Section expand/collapse
-   - KRS gauge animation
-   - Progress bar fills
-   - Hover states
-
-3. **Phase 3: Data Integration**
-   - API connection
-   - Data mapping
-   - Error states
-   - Loading states
-
-4. **Phase 4: Polish**
-   - Micro-interactions
-   - Stagger animations
-   - Share functionality
-   - Analytics tracking
-
----
-
-## 📝 Implementation Notes
+## 🚀 Implementation Notes
 
 ### Component Hierarchy
 ```
-<ReportScreen>
-  <ReportHeader />
-  <KRSHeroCard />
-  <FourBFramework>
-    <BrainCard />
-    <BodyCard />
-    <BatCard />
-    <BallCard />
-  </FourBFramework>
-  <SectionBreakdown>
-    <SectionCard /> × 11
-  </SectionBreakdown>
-  <StickyCTA />
-  <BottomNav />
-</ReportScreen>
+ReportPage
+├── ReportHeader
+├── KRSHeroCard
+├── FourBGrid
+│   ├── BrainCard
+│   ├── BodyCard
+│   ├── BatCard
+│   └── BallCard
+├── QuickWinsSection
+├── MissionSection
+├── DrillLibrarySection
+├── ProgressSection
+├── CoachRickSection
+└── FlagsSection
 ```
 
 ### State Management
-```javascript
-const [report, setReport] = useState(null);
-const [expandedSections, setExpandedSections] = useState([]);
-const [loading, setLoading] = useState(true);
-const [error, setError] = useState(null);
-```
+- **Zustand store**: `useReportStore`
+- **API call**: `fetchPlayerReport(sessionId)`
+- **Caching**: Cache report for 5 minutes
+- **Optimistic updates**: Show cached data while fetching
 
-### Error Handling
-- Network error: Retry button
-- Invalid session: Redirect to upload
-- Missing data: Show defaults with warning
-- Timeout: Show partial report with notice
+### Performance Optimizations
+- **Lazy load images**: Use `next/image` with `loading="lazy"`
+- **Virtual scroll**: For drill library (if > 20 drills)
+- **Code splitting**: Lazy load non-critical sections
+- **Memoization**: Memoize expensive calculations (KRS gauge)
+
+---
+
+## 📝 Notes for Builder 2
+
+1. **4B Cards**: Already implemented in `/templates/coach_rick_analysis.html`. Copy HTML structure and adapt to React/Next.js components.
+
+2. **KRS Circular Gauge**: Existing implementation uses SVG. Consider using canvas for 60 FPS animation.
+
+3. **Data Transformer**: `/app/services/data_transformer.py` transforms Coach Rick API response to PlayerReport schema. Frontend should expect this exact structure.
+
+4. **Mobile-first**: Design starts with mobile (375px), then scales up. Test on iPhone SE (375×667) and iPhone 14 Pro (393×852).
+
+5. **Accessibility**: This is the most complex screen. Ensure all sections have proper landmarks and headings.
+
+6. **Error Handling**: If API call fails, show error state per section (not full page error). Allow retry per section.
 
 ---
 
 ## ✅ Definition of Done
 
-- [ ] KRS Hero displays correctly with animation
-- [ ] 4B cards render with proper colors/data
-- [ ] 11 sections expandable/collapsible
-- [ ] Responsive on 375px, 768px, 1024px
-- [ ] Smooth animations (60fps)
-- [ ] Keyboard accessible
-- [ ] Screen reader tested
-- [ ] Error states handled
-- [ ] Loading states implemented
-- [ ] CTA button sticky and functional
-- [ ] Share functionality working
+- [ ] All 11 sections render correctly
+- [ ] 4B cards match design system colors and spacing
+- [ ] Responsive behavior works on mobile, tablet, desktop
+- [ ] KRS circular gauge animates smoothly (60 FPS)
+- [ ] All interactive elements keyboard accessible
+- [ ] Loading states for all sections
+- [ ] Error states with retry functionality
+- [ ] Share button opens native share sheet
+- [ ] Drill cards navigate to drill detail
+- [ ] CTAs navigate to correct pages
+- [ ] Lighthouse score > 90
+- [ ] No console errors or warnings
 
 ---
 
-**Next Steps:**
-1. Create Figma mockup with all specifications
-2. Export design tokens for KRS Hero & 4B cards
-3. Build interactive prototype for user testing
-4. Handoff to development with component specs
+**Priority**: P0 (Critical Path)  
+**Complexity**: HIGH (Most complex screen)  
+**Estimated Dev Time**: 12-16 hours (Phase 1)
+
+**Dependencies**:
+- Design System components
+- API integration (PlayerReport endpoint)
+- Supabase session storage
+- Backend data transformer
 
 ---
 
-**Status:** ✅ SPECIFICATION COMPLETE  
-**Ready for:** Figma Design Phase  
-**Review Date:** Friday 4pm
+*Last Updated: December 26, 2025*  
+*Screen Specification v1.0*
