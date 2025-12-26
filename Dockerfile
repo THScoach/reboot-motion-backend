@@ -20,4 +20,4 @@ COPY . .
 EXPOSE 8006
 
 # Run application (use shell form to allow PORT env var expansion)
-CMD uvicorn coach_rick_wap_integration:app --host 0.0.0.0 --port ${PORT:-8006}
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8006}
