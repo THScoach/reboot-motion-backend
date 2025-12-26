@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Player Guide - Catching Barrels</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .option-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            color: white;
+            text-decoration: none;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.4);
+        }
+        
+        .card h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+        
+        .card p {
+            opacity: 0.9;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        
+        .card ul {
+            list-style: none;
+            margin-top: 1rem;
+        }
+        
+        .card li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        
+        .card li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        .files-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .files-section h3 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        
+        .file-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #667eea;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        
+        .file-desc {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            margin-top: 1rem;
+            transition: background 0.3s;
+        }
+        
+        .download-btn:hover {
+            background: #059669;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-bottom: 2rem;
+        }
+        
+        .status-working {
+            background: #10b981;
+            color: white;
+        }
+        
+        .status-bug {
+            background: #ef4444;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Test As A Player</h1>
+        <p class="subtitle">Upload your swing data and get AI-powered coaching feedback</p>
+        
+        <div class="option-cards">
+            <a href="https://8006-i5cseikj92ei70k8wadux-2e77fc33.sandbox.novita.ai/coach-rick-ui" class="card">
+                <h2>🎥 Coach Rick Video Analysis</h2>
+                <span class="status-badge status-working">✓ Working</span>
+                <p>Upload a swing video and get comprehensive analysis with personalized coaching.</p>
+                <ul>
+                    <li>Motor Profile Classification</li>
+                    <li>Ground Flow Analysis</li>
+                    <li>Engine Flow Analysis</li>
+                    <li>Weapon Analysis</li>
+                    <li>Personalized Feedback</li>
+                </ul>
+            </a>
+            
+            <a href="https://8006-i5cseikj92ei70k8wadux-2e77fc33.sandbox.novita.ai/swing-dna/upload" class="card">
+                <h2>📊 Swing DNA CSV Analysis</h2>
+                <span class="status-badge status-bug">⚠ Known Bug</span>
+                <p>Upload biomechanical CSV data for detailed swing pattern analysis.</p>
+                <ul>
+                    <li>Pattern Recognition</li>
+                    <li>Efficiency Scores</li>
+                    <li>Ball Outcome Predictions</li>
+                    <li>6-Week Training Plan</li>
+                    <li>Coach Commentary</li>
+                </ul>
+                <small style="opacity: 0.8; margin-top: 1rem; display: block;">
+                    Note: CSV upload has a known bug. Use API directly or wait for fix.
+                </small>
+            </a>
+        </div>
+        
+        <div class="files-section">
+            <h3>📁 Sample Test Files Available</h3>
+            
+            <div class="file-item">
+                <div class="file-name">test_player_momentum_energy.csv</div>
+                <div class="file-desc">
+                    Contains: hip angular momentum, shoulder angular momentum, shoulder/hip ratio, 
+                    timing gap, vertical GRF estimate, bat speed (6 data points)
+                </div>
+            </div>
+            
+            <div class="file-item">
+                <div class="file-name">test_player_inverse_kinematics.csv</div>
+                <div class="file-desc">
+                    Contains: lead knee angle, lead arm extension, pelvis rotation, torso rotation, 
+                    bat angle, contact point coordinates (6 data points)
+                </div>
+            </div>
+            
+            <div class="file-item">
+                <div class="file-name">Eric Williams Test Data</div>
+                <div class="file-desc">
+                    Pre-validated test case: eric_williams_momentum_energy.csv and 
+                    eric_williams_inverse_kinematics.csv in catching_barrels_package/
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 3rem; padding: 2rem; background: #f0f9ff; border-radius: 12px; border-left: 4px solid #3b82f6;">
+            <h3 style="color: #1e40af; margin-bottom: 1rem;">💡 Quick Test Options</h3>
+            <ol style="color: #374151; line-height: 2;">
+                <li><strong>Video Test (Recommended):</strong> Go to Coach Rick UI, upload any swing video, get instant analysis</li>
+                <li><strong>API Test:</strong> Use Swagger UI at <a href="https://8006-i5cseikj92ei70k8wadux-2e77fc33.sandbox.novita.ai/docs" style="color: #667eea;">/docs</a> to test endpoints interactively</li>
+                <li><strong>CSV Test:</strong> Download sample files above and try the Swing DNA upload (known bug, may fail)</li>
+                <li><strong>Direct API:</strong> Use curl or Postman with the test CSV files</li>
+            </ol>
+        </div>
+        
+        <div style="margin-top: 2rem; text-align: center;">
+            <a href="https://8006-i5cseikj92ei70k8wadux-2e77fc33.sandbox.novita.ai/docs" class="download-btn">
+                📖 View API Documentation
+            </a>
+            <a href="https://8006-i5cseikj92ei70k8wadux-2e77fc33.sandbox.novita.ai" class="download-btn" style="background: #667eea; margin-left: 1rem;">
+                🏠 Back to Home
+            </a>
+        </div>
+    </div>
+</body>
+</html>

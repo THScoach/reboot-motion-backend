@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinetic DNA Blueprint - Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #666;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: auto;
+        }
+        
+        .tab:hover {
+            color: #667eea;
+            transform: none;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .help-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        input[type="file"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        button[type="submit"] {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
+        }
+        
+        button[type="submit"]:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            color: #667eea;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .results.active {
+            display: block;
+        }
+        
+        .results h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .metric-card h3 {
+            color: #667eea;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .metric-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        pre {
+            background: #333;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .error.active {
+            display: block;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚾ Kinetic DNA Blueprint</h1>
+        <p class="subtitle">Analyze swing videos or import Reboot Motion CSV data</p>
+        
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('video')">📹 Video Analysis</button>
+            <button class="tab" onclick="switchTab('csv')">📂 CSV Import</button>
+        </div>
+        
+        <!-- Video Upload Tab -->
+        <div id="video-tab" class="tab-content active">
+            <form id="videoForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="video">Video File</label>
+                    <input type="file" id="video" name="video" accept="video/*" required>
+                    <div class="help-text">Upload a swing video (.mov, .mp4, .avi)</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="name">Athlete Name</label>
+                    <input type="text" id="name" name="name" placeholder="e.g., Connor Gray" required>
+                </div>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label for="height">Height (inches)</label>
+                        <input type="number" id="height" name="height_inches" placeholder="e.g., 72" step="0.1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="weight">Weight (lbs)</label>
+                        <input type="number" id="weight" name="weight_lbs" placeholder="e.g., 160" step="0.1" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="wingspan">Wingspan (inches) - Optional</label>
+                    <input type="number" id="wingspan" name="wingspan_inches" placeholder="e.g., 76 (fingertip to fingertip)" step="0.1">
+                    <div class="help-text">⭐ Recommended: Improves bat speed potential accuracy. Measure with arms extended horizontally.</div>
+                </div>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" name="age" placeholder="e.g., 16" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bat_side">Bat Side</label>
+                        <select id="bat_side" name="bat_side" required>
+                            <option value="">Select...</option>
+                            <option value="right">Right</option>
+                            <option value="left">Left</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="submit">Analyze Video</button>
+            </form>
+            
+            <div class="loading" id="video-loading">
+                <div class="spinner"></div>
+                <p>Processing video... This may take 30-60 seconds</p>
+            </div>
+            
+            <div class="error" id="video-error"></div>
+            <div class="results" id="video-results"></div>
+        </div>
+        
+        <!-- CSV Upload Tab -->
+        <div id="csv-tab" class="tab-content">
+            <div class="info-box">
+                <strong>📂 Import Reboot Motion CSV Data</strong><br>
+                Upload <strong>momentum-energy</strong> or <strong>inverse-kinematics</strong> CSV files exported from Reboot Motion to get instant metrics.
+                File type is automatically detected from filename. Useful when the API is unavailable or for validation purposes.
+            </div>
+            
+            <form id="csvForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="csv-file">CSV File</label>
+                    <input type="file" id="csv-file" name="file" accept=".csv" required>
+                    <div class="help-text">Upload momentum-energy.csv or inverse-kinematics.csv from Reboot Motion</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="csv-athlete">Athlete Name (optional)</label>
+                    <input type="text" id="csv-athlete" name="athlete_name" placeholder="e.g., Connor Gray">
+                    <div class="help-text">CSV doesn't contain athlete name, add it here</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bat-mass">Bat Mass (kg)</label>
+                    <input type="number" id="bat-mass" name="bat_mass_kg" value="0.85" step="0.01" required>
+                    <div class="help-text">33"/30oz bat = 0.85 kg (default)</div>
+                </div>
+                
+                <button type="submit">Import CSV</button>
+            </form>
+            
+            <div class="loading" id="csv-loading">
+                <div class="spinner"></div>
+                <p>Processing CSV file...</p>
+            </div>
+            
+            <div class="error" id="csv-error"></div>
+            <div class="results" id="csv-results"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Tab switching
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(tab + '-tab').classList.add('active');
+            
+            // Clear results and errors
+            document.querySelectorAll('.results, .error').forEach(el => el.classList.remove('active'));
+        }
+        
+        // Video form submission
+        document.getElementById('videoForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const loading = document.getElementById('video-loading');
+            const error = document.getElementById('video-error');
+            const results = document.getElementById('video-results');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            // Reset UI
+            loading.classList.add('active');
+            error.classList.remove('active');
+            results.classList.remove('active');
+            submitBtn.disabled = true;
+            
+            try {
+                const formData = new FormData(e.target);
+                
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                loading.classList.remove('active');
+                
+                if (response.ok) {
+                    displayVideoResults(data);
+                    results.classList.add('active');
+                } else {
+                    error.textContent = data.detail || 'Analysis failed';
+                    error.classList.add('active');
+                }
+            } catch (err) {
+                loading.classList.remove('active');
+                error.textContent = 'Error: ' + err.message;
+                error.classList.add('active');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+        
+        // CSV form submission
+        document.getElementById('csvForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const loading = document.getElementById('csv-loading');
+            const error = document.getElementById('csv-error');
+            const results = document.getElementById('csv-results');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            // Reset UI
+            loading.classList.add('active');
+            error.classList.remove('active');
+            results.classList.remove('active');
+            submitBtn.disabled = true;
+            
+            try {
+                const formData = new FormData(e.target);
+                
+                const response = await fetch('/upload-reboot-csv', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                loading.classList.remove('active');
+                
+                if (response.ok) {
+                    displayCSVResults(data);
+                    results.classList.add('active');
+                } else {
+                    error.textContent = data.detail || 'CSV import failed';
+                    error.classList.add('active');
+                }
+            } catch (err) {
+                loading.classList.remove('active');
+                error.textContent = 'Error: ' + err.message;
+                error.classList.add('active');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+        
+        function displayVideoResults(data) {
+            const results = document.getElementById('video-results');
+            results.innerHTML = `
+                <h2>📊 Analysis Results</h2>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        }
+        
+        function displayCSVResults(data) {
+            const results = document.getElementById('csv-results');
+            
+            // Check file type
+            if (data.data_type === 'inverse-kinematics') {
+                displayIKResults(data, results);
+            } else {
+                displayMomentumResults(data, results);
+            }
+        }
+        
+        function displayMomentumResults(data, resultsEl) {
+            const session = data.session_info;
+            const metrics = data.ground_truth_metrics;
+            
+            resultsEl.innerHTML = `
+                <h2>📊 Ground Truth Metrics (Momentum-Energy)</h2>
+                
+                <div class="metric-card">
+                    <h3>Session Info</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Session ID:</span>
+                        <span class="metric-value">${session.session_id}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Athlete:</span>
+                        <span class="metric-value">${session.athlete_name || 'N/A'}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">FPS:</span>
+                        <span class="metric-value">${session.fps}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Duration:</span>
+                        <span class="metric-value">${session.duration_s}s (${session.num_frames} frames)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Contact:</span>
+                        <span class="metric-value">Frame ${session.contact_frame} (${session.contact_time_s}s)</span>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Bat Speed</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">At Contact:</span>
+                        <span class="metric-value">${metrics.bat_speed.at_contact_mph} mph</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Peak:</span>
+                        <span class="metric-value">${metrics.bat_speed.peak_mph} mph</span>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Energy Distribution (at contact)</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Total:</span>
+                        <span class="metric-value">${metrics.energy_distribution.total_j} J</span>
+                    </div>
+                    ${metrics.energy_distribution.lowerhalf_pct ? `
+                    <div class="metric-row">
+                        <span class="metric-label">Lower Half:</span>
+                        <span class="metric-value">${metrics.energy_distribution.lowerhalf_pct}%</span>
+                    </div>
+                    ` : ''}
+                    ${metrics.energy_distribution.torso_pct ? `
+                    <div class="metric-row">
+                        <span class="metric-label">Torso:</span>
+                        <span class="metric-value">${metrics.energy_distribution.torso_pct}%</span>
+                    </div>
+                    ` : ''}
+                    ${metrics.energy_distribution.arms_pct ? `
+                    <div class="metric-row">
+                        <span class="metric-label">Arms:</span>
+                        <span class="metric-value">${metrics.energy_distribution.arms_pct}%</span>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Kinematic Sequence (ms before contact)</h3>
+                    ${Object.entries(metrics.kinematic_sequence_ms_before_contact).map(([segment, time]) => `
+                        <div class="metric-row">
+                            <span class="metric-label">${segment.charAt(0).toUpperCase() + segment.slice(1)}:</span>
+                            <span class="metric-value">${time} ms</span>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Tempo (estimated)</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Ratio:</span>
+                        <span class="metric-value">${metrics.tempo_estimated.ratio}:1</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Load Duration:</span>
+                        <span class="metric-value">${metrics.tempo_estimated.load_duration_ms} ms</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Swing Duration:</span>
+                        <span class="metric-value">${metrics.tempo_estimated.swing_duration_ms} ms</span>
+                    </div>
+                </div>
+                
+                <details style="margin-top: 20px;">
+                    <summary style="cursor: pointer; font-weight: 600; color: #667eea;">View Full JSON Response</summary>
+                    <pre style="margin-top: 10px;">${JSON.stringify(data, null, 2)}</pre>
+                </details>
+            `;
+        }
+        
+        function displayIKResults(data, resultsEl) {
+            const session = data.session_info;
+            const jointData = data.joint_data;
+            const metrics = data.ik_metrics;
+            
+            let html = `
+                <h2>📊 Inverse Kinematics Data</h2>
+                
+                <div class="metric-card">
+                    <h3>Session Info</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Session ID:</span>
+                        <span class="metric-value">${session.session_id}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Athlete:</span>
+                        <span class="metric-value">${session.athlete_name || 'N/A'}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">FPS:</span>
+                        <span class="metric-value">${session.fps}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Duration:</span>
+                        <span class="metric-value">${session.duration_s}s (${session.num_frames} frames)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Contact:</span>
+                        <span class="metric-value">Frame ${session.contact_frame} (${session.contact_time_s}s)</span>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Joint Data Summary</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Joint Angles:</span>
+                        <span class="metric-value">${jointData.num_joint_angles} series</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Joint Positions:</span>
+                        <span class="metric-value">${jointData.num_joint_positions} series</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Angular Velocities:</span>
+                        <span class="metric-value">${jointData.has_angular_velocities ? 'Yes' : 'No'}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Segment Orientations:</span>
+                        <span class="metric-value">${jointData.has_segment_orientations ? 'Yes' : 'No'}</span>
+                    </div>
+                </div>
+            `;
+            
+            // Hip-shoulder separation
+            if (metrics.hip_shoulder_separation) {
+                html += `
+                    <div class="metric-card">
+                        <h3>Hip-Shoulder Separation</h3>
+                        <div class="metric-row">
+                            <span class="metric-label">Maximum:</span>
+                            <span class="metric-value">${metrics.hip_shoulder_separation.max_deg.toFixed(1)}°</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">At Contact:</span>
+                            <span class="metric-value">${metrics.hip_shoulder_separation.at_contact_deg.toFixed(1)}°</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Bat path length
+            if (metrics.bat_path_length_m) {
+                html += `
+                    <div class="metric-card">
+                        <h3>Bat Path</h3>
+                        <div class="metric-row">
+                            <span class="metric-label">Total Path Length:</span>
+                            <span class="metric-value">${metrics.bat_path_length_m.toFixed(2)} m</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Range of motion (show first 5 joints)
+            if (metrics.range_of_motion) {
+                const romEntries = Object.entries(metrics.range_of_motion).slice(0, 5);
+                if (romEntries.length > 0) {
+                    html += `
+                        <div class="metric-card">
+                            <h3>Range of Motion (Sample)</h3>
+                            ${romEntries.map(([joint, data]) => `
+                                <div class="metric-row">
+                                    <span class="metric-label">${joint}:</span>
+                                    <span class="metric-value">${data.range.toFixed(1)}° (${data.min.toFixed(1)}° to ${data.max.toFixed(1)}°)</span>
+                                </div>
+                            `).join('')}
+                            <div style="margin-top: 10px; font-size: 12px; color: #999;">
+                                ${Object.keys(metrics.range_of_motion).length} total joints tracked
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            html += `
+                <details style="margin-top: 20px;">
+                    <summary style="cursor: pointer; font-weight: 600; color: #667eea;">View Full JSON Response</summary>
+                    <pre style="margin-top: 10px;">${JSON.stringify(data, null, 2)}</pre>
+                </details>
+            `;
+            
+            resultsEl.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

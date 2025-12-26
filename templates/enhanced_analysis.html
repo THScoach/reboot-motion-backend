@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Swing Analysis - Reboot Motion</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
+            color: #1f2937;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .input-section {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .input-section h2 {
+            color: #1e3a8a;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+        
+        .form-group input {
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .btn-analyze {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+        
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-analyze:active {
+            transform: translateY(0);
+        }
+        
+        .results-container {
+            display: none;
+        }
+        
+        .results-container.show {
+            display: block;
+        }
+        
+        /* Motor Preference Card */
+        .motor-preference-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .motor-preference-card h2 {
+            color: #1e3a8a;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .preference-badge {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+        
+        .preference-badge.spinner {
+            background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+            color: white;
+        }
+        
+        .preference-badge.glider {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+        
+        .preference-badge.launcher {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .confidence-bar {
+            background: #f3f4f6;
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+            transition: width 1s ease;
+        }
+        
+        .motor-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .motor-detail-box {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .motor-detail-box h3 {
+            color: #1e3a8a;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+        }
+        
+        .motor-detail-box p {
+            color: #4b5563;
+            line-height: 1.6;
+        }
+        
+        /* Adjusted Scores Display */
+        .scores-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .scores-card h2 {
+            color: #1e3a8a;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .score-comparison {
+            display: grid;
+            gap: 1.5rem;
+        }
+        
+        .score-row {
+            display: grid;
+            grid-template-columns: 100px 1fr 100px;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 12px;
+        }
+        
+        .score-label {
+            font-weight: 700;
+            color: #1e3a8a;
+            font-size: 1.1rem;
+        }
+        
+        .score-bar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .score-bar-track {
+            flex: 1;
+            height: 24px;
+            background: #e5e7eb;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .score-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+            border-radius: 12px;
+            transition: width 1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 0.5rem;
+            color: white;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        
+        .score-adjustment {
+            font-weight: 700;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        .score-adjustment.positive {
+            background: #d1fae5;
+            color: #059669;
+        }
+        
+        .score-adjustment.neutral {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        
+        /* Capacity & Performance */
+        .capacity-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .capacity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .capacity-stat {
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .capacity-stat-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .capacity-stat-value {
+            color: #1e3a8a;
+            font-size: 2rem;
+            font-weight: 800;
+        }
+        
+        .capacity-stat-unit {
+            color: #6b7280;
+            font-size: 1rem;
+        }
+        
+        /* Correction Plan Dashboard */
+        .correction-plan-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .correction-plan-card h2 {
+            color: #1e3a8a;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .timeline-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+        
+        .issues-section {
+            margin-bottom: 2rem;
+        }
+        
+        .issues-section h3 {
+            color: #1e3a8a;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .issue-card {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+        }
+        
+        .issue-card.high {
+            background: #fff7ed;
+            border-left-color: #f59e0b;
+        }
+        
+        .issue-card.medium {
+            background: #fef9c3;
+            border-left-color: #eab308;
+        }
+        
+        .issue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .issue-name {
+            font-weight: 700;
+            color: #1f2937;
+            font-size: 1rem;
+        }
+        
+        .issue-gain {
+            background: #10b981;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        
+        .issue-description {
+            color: #4b5563;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        /* Drills Section */
+        .drills-section {
+            margin-bottom: 2rem;
+        }
+        
+        .drills-section h3 {
+            color: #1e3a8a;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .drill-card {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .drill-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+        
+        .drill-card.expanded {
+            background: white;
+            border-color: #3b82f6;
+        }
+        
+        .drill-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .drill-name {
+            font-weight: 700;
+            color: #1f2937;
+            font-size: 1.1rem;
+        }
+        
+        .drill-stage {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .drill-details {
+            display: none;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 2px solid #e5e7eb;
+        }
+        
+        .drill-details.show {
+            display: block;
+        }
+        
+        .drill-detail-section {
+            margin-bottom: 1rem;
+        }
+        
+        .drill-detail-label {
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-bottom: 0.5rem;
+        }
+        
+        .drill-detail-content {
+            color: #4b5563;
+            line-height: 1.6;
+        }
+        
+        .drill-detail-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .drill-detail-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        
+        .drill-detail-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: 700;
+        }
+        
+        /* Strength Work */
+        .strength-section {
+            margin-bottom: 2rem;
+        }
+        
+        .strength-section h3 {
+            color: #1e3a8a;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .strength-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        
+        .strength-item {
+            background: #f0fdf4;
+            border-left: 4px solid #10b981;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        
+        .strength-name {
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Error */
+        .error {
+            background: #fef2f2;
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Enhanced Swing Analysis</h1>
+            <p>Powered by Priority 9 (Kinetic Capacity) + Priority 10 (Recommendation Engine) + Priority 11 (BioSwing Motor Preference)</p>
+        </div>
+        
+        <!-- Input Section -->
+        <div class="input-section">
+            <h2>📝 Enter Athlete Data</h2>
+            <form id="analysisForm">
+                <div class="form-grid">
+                    <!-- Scores -->
+                    <div class="form-group">
+                        <label for="ground_score">Ground Score (0-100)</label>
+                        <input type="number" id="ground_score" name="ground_score" min="0" max="100" value="38" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="engine_score">Engine Score (0-100)</label>
+                        <input type="number" id="engine_score" name="engine_score" min="0" max="100" value="58" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="weapon_score">Weapon Score (0-100)</label>
+                        <input type="number" id="weapon_score" name="weapon_score" min="0" max="100" value="55" required>
+                    </div>
+                    
+                    <!-- Athlete Info -->
+                    <div class="form-group">
+                        <label for="height_inches">Height (inches)</label>
+                        <input type="number" id="height_inches" name="height_inches" step="0.1" value="68" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="wingspan_inches">Wingspan (inches)</label>
+                        <input type="number" id="wingspan_inches" name="wingspan_inches" step="0.1" value="69">
+                    </div>
+                    <div class="form-group">
+                        <label for="weight_lbs">Weight (lbs)</label>
+                        <input type="number" id="weight_lbs" name="weight_lbs" step="0.1" value="190" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" name="age" value="33" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bat_weight_oz">Bat Weight (oz)</label>
+                        <input type="number" id="bat_weight_oz" name="bat_weight_oz" value="30" required>
+                    </div>
+                    
+                    <!-- Optional -->
+                    <div class="form-group">
+                        <label for="actual_bat_speed_mph">Actual Bat Speed (mph, optional)</label>
+                        <input type="number" id="actual_bat_speed_mph" name="actual_bat_speed_mph" step="0.1" value="67.0">
+                    </div>
+                    <div class="form-group">
+                        <label for="rotation_ke_joules">Rotation KE (J, optional)</label>
+                        <input type="number" id="rotation_ke_joules" name="rotation_ke_joules" step="0.1" value="3743">
+                    </div>
+                    <div class="form-group">
+                        <label for="translation_ke_joules">Translation KE (J, optional)</label>
+                        <input type="number" id="translation_ke_joules" name="translation_ke_joules" step="0.1" value="421">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-analyze">🔬 Analyze Swing</button>
+            </form>
+        </div>
+        
+        <!-- Loading -->
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Analyzing swing biomechanics...</p>
+        </div>
+        
+        <!-- Error -->
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <!-- Results Container -->
+        <div id="resultsContainer" class="results-container">
+            <!-- Motor Preference Card -->
+            <div class="motor-preference-card">
+                <h2>🧬 Motor Preference Profile</h2>
+                <div id="motorPreferenceContent"></div>
+            </div>
+            
+            <!-- Adjusted Scores Display -->
+            <div class="scores-card">
+                <h2>📊 Motor-Aware Scoring</h2>
+                <div id="scoresContent"></div>
+            </div>
+            
+            <!-- Capacity & Performance -->
+            <div class="capacity-card">
+                <h2>⚡ Kinetic Capacity & Performance</h2>
+                <div id="capacityContent"></div>
+            </div>
+            
+            <!-- Correction Plan Dashboard -->
+            <div class="correction-plan-card">
+                <h2>🎯 Personalized Correction Plan</h2>
+                <div id="correctionPlanContent"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const form = document.getElementById('analysisForm');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const resultsContainer = document.getElementById('resultsContainer');
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Hide previous results
+            resultsContainer.classList.remove('show');
+            error.style.display = 'none';
+            loading.style.display = 'block';
+            
+            // Get form data
+            const formData = new FormData(form);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                if (value === '') {
+                    data[key] = null;
+                } else if (key.includes('score') || key.includes('age') || key.includes('oz')) {
+                    data[key] = parseInt(value);
+                } else {
+                    data[key] = parseFloat(value);
+                }
+            }
+            
+            try {
+                const response = await fetch('/analyze/enhanced', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                loading.style.display = 'none';
+                renderResults(result.data);
+                resultsContainer.classList.add('show');
+                
+                // Scroll to results
+                resultsContainer.scrollIntoView({ behavior: 'smooth' });
+            } catch (err) {
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                error.textContent = `Error: ${err.message}`;
+            }
+        });
+        
+        function renderResults(data) {
+            renderMotorPreference(data.motor_preference);
+            renderScores(data.scores_adjusted);
+            renderCapacity(data.capacity, data.performance);
+            renderCorrectionPlan(data.correction_plan, data.energy_leaks);
+        }
+        
+        function renderMotorPreference(motor) {
+            const content = document.getElementById('motorPreferenceContent');
+            const preferenceClass = motor.preference.toLowerCase();
+            
+            content.innerHTML = `
+                <div class="preference-badge ${preferenceClass}">
+                    ${motor.preference.toUpperCase()}
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <strong>Confidence:</strong> ${(motor.confidence * 100).toFixed(1)}%
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: ${motor.confidence * 100}%"></div>
+                    </div>
+                </div>
+                
+                <div class="motor-details">
+                    <div class="motor-detail-box">
+                        <h3>📝 Description</h3>
+                        <p>${motor.description}</p>
+                    </div>
+                    
+                    <div class="motor-detail-box">
+                        <h3>🎯 Coaching Focus</h3>
+                        <p>${motor.coaching_focus.join(', ')}</p>
+                    </div>
+                    
+                    <div class="motor-detail-box">
+                        <h3>⚠️ Avoid</h3>
+                        <p>${motor.avoid_coaching.join(', ')}</p>
+                    </div>
+                    
+                    <div class="motor-detail-box">
+                        <h3>📊 Force Characteristics</h3>
+                        <p><strong>Primary Force:</strong> ${motor.primary_force}</p>
+                        <p><strong>Post Bias:</strong> ${motor.post_bias}</p>
+                        ${motor.actual_rotation_ratio ? `
+                        <p><strong>Rotation:</strong> ${(motor.actual_rotation_ratio * 100).toFixed(1)}% 
+                        (Expected: ${(motor.expected_rotation_ratio * 100).toFixed(0)}%)</p>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderScores(scores) {
+            const content = document.getElementById('scoresContent');
+            
+            content.innerHTML = `
+                <div class="score-comparison">
+                    ${renderScoreRow('Ground', scores.ground)}
+                    ${renderScoreRow('Engine', scores.engine)}
+                    ${renderScoreRow('Weapon', scores.weapon)}
+                </div>
+                
+                <div style="margin-top: 1.5rem; text-align: center; padding: 1rem; background: #f0fdf4; border-radius: 12px;">
+                    <strong style="color: #1e3a8a;">Overall Efficiency:</strong>
+                    <span style="font-size: 1.5rem; font-weight: 800; color: #059669;">
+                        ${scores.overall_efficiency.toFixed(1)}%
+                    </span>
+                </div>
+            `;
+        }
+        
+        function renderScoreRow(label, score) {
+            const adjustmentClass = score.adjustment > 0 ? 'positive' : 'neutral';
+            const adjustmentText = score.adjustment > 0 ? `+${score.adjustment}` : score.adjustment;
+            
+            return `
+                <div class="score-row">
+                    <div class="score-label">${label}</div>
+                    <div class="score-bar">
+                        <div class="score-bar-track">
+                            <div class="score-bar-fill" style="width: ${score.adjusted}%">
+                                ${score.raw} → ${score.adjusted}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="score-adjustment ${adjustmentClass}">
+                        ${adjustmentText}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderCapacity(capacity, performance) {
+            const content = document.getElementById('capacityContent');
+            
+            content.innerHTML = `
+                <div class="capacity-grid">
+                    <div class="capacity-stat">
+                        <div class="capacity-stat-label">Bat Speed Range</div>
+                        <div class="capacity-stat-value">
+                            ${capacity.bat_speed_range.min_mph.toFixed(1)}-${capacity.bat_speed_range.max_mph.toFixed(1)}
+                            <span class="capacity-stat-unit">mph</span>
+                        </div>
+                    </div>
+                    
+                    <div class="capacity-stat">
+                        <div class="capacity-stat-label">Target Capacity</div>
+                        <div class="capacity-stat-value">
+                            ${capacity.bat_speed_range.midpoint_mph.toFixed(1)}
+                            <span class="capacity-stat-unit">mph</span>
+                        </div>
+                    </div>
+                    
+                    <div class="capacity-stat">
+                        <div class="capacity-stat-label">Predicted Performance</div>
+                        <div class="capacity-stat-value">
+                            ${performance.predicted_bat_speed_mph.toFixed(1)}
+                            <span class="capacity-stat-unit">mph</span>
+                        </div>
+                    </div>
+                    
+                    ${performance.actual_bat_speed_mph ? `
+                    <div class="capacity-stat">
+                        <div class="capacity-stat-label">Actual Performance</div>
+                        <div class="capacity-stat-value">
+                            ${performance.actual_bat_speed_mph.toFixed(1)}
+                            <span class="capacity-stat-unit">mph</span>
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <div class="capacity-stat">
+                        <div class="capacity-stat-label">Gap to Max</div>
+                        <div class="capacity-stat-value" style="color: #ef4444;">
+                            ${performance.gap_to_capacity_max_mph.toFixed(1)}
+                            <span class="capacity-stat-unit">mph</span>
+                        </div>
+                    </div>
+                    
+                    <div class="capacity-stat">
+                        <div class="capacity-stat-label">Exit Velo Range</div>
+                        <div class="capacity-stat-value">
+                            ${capacity.exit_velo_range.min_mph.toFixed(1)}-${capacity.exit_velo_range.max_mph.toFixed(1)}
+                            <span class="capacity-stat-unit">mph</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderCorrectionPlan(plan, leaks) {
+            const content = document.getElementById('correctionPlanContent');
+            
+            content.innerHTML = `
+                <div class="timeline-badge">
+                    ⏱️ Timeline: ${plan.timeline}
+                </div>
+                
+                <!-- Issues -->
+                <div class="issues-section">
+                    <h3>🚨 Identified Issues</h3>
+                    ${plan.issues.map(issue => renderIssue(issue)).join('')}
+                </div>
+                
+                <!-- Drills -->
+                <div class="drills-section">
+                    <h3>🎓 Drill Progression</h3>
+                    ${plan.drills.map((drill, index) => renderDrill(drill, index)).join('')}
+                </div>
+                
+                <!-- Strength Work -->
+                <div class="strength-section">
+                    <h3>💪 Strength & Conditioning</h3>
+                    <div class="strength-list">
+                        ${plan.strength_work.map(exercise => `
+                            <div class="strength-item">
+                                <div class="strength-name">${exercise}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <!-- Success Metrics -->
+                <div style="margin-top: 2rem; padding: 1.5rem; background: #dbeafe; border-radius: 12px;">
+                    <h3 style="color: #1e3a8a; margin-bottom: 1rem;">🎯 Success Metrics</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        <div>
+                            <strong>Target Ground:</strong> ${plan.success_metrics.target_ground_score}
+                        </div>
+                        <div>
+                            <strong>Target Engine:</strong> ${plan.success_metrics.target_engine_score}
+                        </div>
+                        <div>
+                            <strong>Target Weapon:</strong> ${plan.success_metrics.target_weapon_score}
+                        </div>
+                        <div>
+                            <strong>Expected Gain:</strong> +${plan.success_metrics.expected_bat_speed_gain_mph.toFixed(1)} mph
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add drill click handlers
+            document.querySelectorAll('.drill-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    card.classList.toggle('expanded');
+                    const details = card.querySelector('.drill-details');
+                    details.classList.toggle('show');
+                });
+            });
+        }
+        
+        function renderIssue(issue) {
+            const priorityClass = issue.priority.toLowerCase();
+            return `
+                <div class="issue-card ${priorityClass}">
+                    <div class="issue-header">
+                        <div class="issue-name">${issue.name} [${issue.priority}]</div>
+                        <div class="issue-gain">+${issue.potential_gain_mph.toFixed(1)} mph</div>
+                    </div>
+                    <div class="issue-description">${issue.root_cause}</div>
+                </div>
+            `;
+        }
+        
+        function renderDrill(drill, index) {
+            return `
+                <div class="drill-card" data-drill-index="${index}">
+                    <div class="drill-header">
+                        <div class="drill-name">${drill.drill_name}</div>
+                        <div class="drill-stage">${drill.stage}</div>
+                    </div>
+                    
+                    <div class="drill-details">
+                        <div class="drill-detail-section">
+                            <div class="drill-detail-label">📝 Description</div>
+                            <div class="drill-detail-content">${drill.description}</div>
+                        </div>
+                        
+                        <div class="drill-detail-section">
+                            <div class="drill-detail-label">⚙️ How It Works</div>
+                            <div class="drill-detail-content">${drill.how_it_works}</div>
+                        </div>
+                        
+                        <div class="drill-detail-section">
+                            <div class="drill-detail-label">🎯 Coaching Cues</div>
+                            <ul class="drill-detail-list">
+                                ${drill.coaching_cues.map(cue => `<li>${cue}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        <div class="drill-detail-section">
+                            <div class="drill-detail-label">📊 Sets & Reps</div>
+                            <div class="drill-detail-content">${drill.sets_reps}</div>
+                        </div>
+                        
+                        ${drill.equipment.length > 0 ? `
+                        <div class="drill-detail-section">
+                            <div class="drill-detail-label">🛠️ Equipment</div>
+                            <div class="drill-detail-content">${drill.equipment.join(', ')}</div>
+                        </div>
+                        ` : ''}
+                        
+                        ${drill.integration_with_tools.length > 0 ? `
+                        <div class="drill-detail-section">
+                            <div class="drill-detail-label">🔗 Integration with Tools</div>
+                            <div class="drill-detail-content">${drill.integration_with_tools.join(', ')}</div>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="drill-detail-section">
+                            <div class="drill-detail-label">✨ Expected Outcome</div>
+                            <div class="drill-detail-content">${drill.expected_outcome}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

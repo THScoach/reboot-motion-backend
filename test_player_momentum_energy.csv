@@ -1,0 +1,9 @@
+rel_frame,lowertorso_angular_momentum_mag,torso_angular_momentum_mag,bat_kinetic_energy,lleg_trans_energy
+-5,1.5,12.0,15.0,45.0
+-4,1.8,14.0,18.0,50.0
+-3,2.0,16.0,22.0,55.0
+-2,2.1,17.5,28.0,60.0
+-1,2.1,18.0,35.0,65.0
+0,2.1,18.25,82.0,70.0
+1,1.9,17.0,75.0,65.0
+2,1.7,15.5,68.0,60.0

@@ -1,0 +1,572 @@
+"""
+Production FastAPI Backend - Reboot Motion Athlete App
+With PostgreSQL Database Integration
+"""
+
+from fastapi import FastAPI, HTTPException, Query, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from typing import Optional, List
+from datetime import datetime
+import os
+import logging
+
+# Import database and models
+from database import get_db, init_db, check_db_connection, migrate_db
+from models import Player, Session as SessionModel, BiomechanicsData, SyncLog
+from sync_service import RebootMotionSync
+
+# Import CSV upload routes
+from csv_upload_routes import router as csv_router
+
+# Import Reboot Lite routes
+from reboot_lite_routes import router as reboot_lite_router
+
+# Import Coach Rick AI routes
+from coach_rick_api import router as coach_rick_router
+
+# Import Priority 12 enhancement
+from priority_12_api_enhancement import enhance_analysis_with_priority_10_11
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Initialize FastAPI app
+app = FastAPI(
+    title="Reboot Motion Athlete API - Production",
+    description="REST API for athlete biomechanics data with PostgreSQL",
+    version="2.0.0"
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify your Netlify domain
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include CSV upload router
+app.include_router(csv_router, tags=["CSV Import"])
+
+# Include Reboot Lite router
+app.include_router(reboot_lite_router, tags=["Reboot Lite"])
+
+# Include Coach Rick AI router
+app.include_router(coach_rick_router, tags=["Coach Rick AI"])
+
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database on app startup"""
+    logger.info("🚀 Starting Reboot Motion API...")
+    
+    # Check database connection
+    if check_db_connection():
+        logger.info("✅ Database connected")
+        # Create tables if they don't exist
+        try:
+            init_db()
+            logger.info("✅ Database tables ready")
+            # Run migrations to add any missing columns
+            migrate_db()
+        except Exception as e:
+            logger.error(f"❌ Error initializing database: {e}")
+    else:
+        logger.error("❌ Database connection failed - API will use limited functionality")
+
+
+# Root endpoint
+@app.get("/")
+def read_root():
+    """API information"""
+    return {
+        "message": "Reboot Motion Athlete API - Production",
+        "version": "2.0.0",
+        "status": "running",
+        "database": "PostgreSQL",
+        "endpoints": {
+            "health": "/health",
+            "players": "/players",
+            "player_detail": "/players/{id}",
+            "player_sessions": "/players/{id}/sessions",
+            "session_data": "/sessions/{id}/data",
+            "enhanced_analysis": "POST /analyze/enhanced (Priority 9+10+11)",
+            "reboot_data_export": "POST /reboot/data-export?session_id={uuid}",
+            "csv_upload": "POST /upload-reboot-csv (fallback for Reboot API)",
+            "csv_upload_info": "GET /csv-upload-info",
+            "coach_rick_ai": "POST /api/v1/reboot-lite/analyze-with-coach (NEW)",
+            "coach_rick_health": "GET /api/v1/reboot-lite/coach-rick/health",
+            "sync_status": "/sync/status",
+            "docs": "/docs"
+        }
+    }
+
+
+# Health check
+@app.get("/health")
+def health_check(db: Session = Depends(get_db)):
+    """Health check with database status"""
+    try:
+        # Test database connection
+        db.execute("SELECT 1")
+        db_status = "connected"
+    except:
+        db_status = "disconnected"
+    
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "database": db_status
+    }
+
+
+# Get all players
+@app.get("/players")
+def get_players(
+    skip: int = Query(0, description="Number of records to skip"),
+    limit: int = Query(100, description="Maximum number of records to return"),
+    search: Optional[str] = Query(None, description="Search by player name"),
+    db: Session = Depends(get_db)
+):
+    """Get list of all players from database"""
+    try:
+        query = db.query(Player)
+        
+        # Search filter
+        if search:
+            search_filter = f"%{search}%"
+            query = query.filter(
+                (Player.first_name.ilike(search_filter)) |
+                (Player.last_name.ilike(search_filter))
+            )
+        
+        # Get total count
+        total = query.count()
+        
+        # Apply pagination
+        players = query.order_by(Player.last_name, Player.first_name)\
+                      .offset(skip)\
+                      .limit(limit)\
+                      .all()
+        
+        return {
+            "total": total,
+            "players": [player.to_dict() for player in players],
+            "page": skip // limit + 1,
+            "limit": limit
+        }
+    except Exception as e:
+        logger.error(f"Error getting players: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Get specific player
+@app.get("/players/{player_id}")
+def get_player(player_id: int, db: Session = Depends(get_db)):
+    """Get specific player details"""
+    player = db.query(Player).filter(Player.id == player_id).first()
+    
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+    
+    return player.to_dict()
+
+
+# Get player's sessions
+@app.get("/players/{player_id}/sessions")
+def get_player_sessions(
+    player_id: int,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    limit: int = Query(50, description="Maximum number of sessions to return"),
+    db: Session = Depends(get_db)
+):
+    """Get all sessions for a specific player"""
+    # Verify player exists
+    player = db.query(Player).filter(Player.id == player_id).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+    
+    # Query sessions
+    query = db.query(SessionModel).filter(SessionModel.player_id == player_id)
+    
+    # Date filters
+    if start_date:
+        query = query.filter(SessionModel.session_date >= start_date)
+    if end_date:
+        query = query.filter(SessionModel.session_date <= end_date)
+    
+    # Get sessions ordered by date
+    sessions = query.order_by(SessionModel.session_date.desc())\
+                   .limit(limit)\
+                   .all()
+    
+    return {
+        "sessions": [session.to_dict(include_player=True) for session in sessions],
+        "total": len(sessions),
+        "player_id": player_id
+    }
+
+
+# Get session details
+@app.get("/sessions/{session_id}")
+def get_session(session_id: int, db: Session = Depends(get_db)):
+    """Get specific session details"""
+    session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    return session.to_dict(include_player=True)
+
+
+# Get session biomechanics data
+@app.get("/sessions/{session_id}/data")
+def get_session_data(
+    session_id: int,
+    limit: int = Query(1000, description="Maximum number of data points to return"),
+    db: Session = Depends(get_db)
+):
+    """Get biomechanics data for a session"""
+    session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Get biomechanics data
+    data_points = db.query(BiomechanicsData)\
+                   .filter(BiomechanicsData.session_id == session_id)\
+                   .order_by(BiomechanicsData.frame_number)\
+                   .limit(limit)\
+                   .all()
+    
+    return {
+        "session": session.to_dict(include_player=True),
+        "data_points": [dp.to_dict() for dp in data_points],
+        "total_points": len(data_points)
+    }
+
+
+# Get session metrics
+@app.get("/sessions/{session_id}/metrics")
+def get_session_metrics(session_id: int, db: Session = Depends(get_db)):
+    """Get aggregated metrics for a session"""
+    session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Get biomechanics data count
+    frame_count = db.query(BiomechanicsData)\
+                   .filter(BiomechanicsData.session_id == session_id)\
+                   .count()
+    
+    # Get first and last timestamps
+    data_points = db.query(BiomechanicsData)\
+                   .filter(BiomechanicsData.session_id == session_id)\
+                   .order_by(BiomechanicsData.timestamp)\
+                   .all()
+    
+    start_time = data_points[0].timestamp if data_points else None
+    end_time = data_points[-1].timestamp if data_points else None
+    
+    return {
+        "session_id": session_id,
+        "total_frames": frame_count,
+        "start_time": start_time.isoformat() if start_time else None,
+        "end_time": end_time.isoformat() if end_time else None,
+        "movement_type": session.movement_type_name
+    }
+
+
+# Get Reboot Motion Data Export
+@app.post("/reboot/data-export")
+def create_reboot_data_export(
+    session_id: str = Query(..., description="Reboot Motion session UUID"),
+    org_player_id: str = Query(..., description="Organization player ID (required)"),
+    movement_type_id: int = Query(1, description="Movement type ID (1=hitting, 2=pitching)"),
+    data_type: str = Query("momentum-energy", description="Data type (momentum-energy, inverse-kinematics, metadata)"),
+    data_format: str = Query("csv", description="Data format (csv or parquet)")
+):
+    """
+    Create a Data Export request to Reboot Motion API (POST method)
+    
+    This pulls the full biomechanics dataset including:
+    - Angular velocities (pelvis, torso, arms, bat)
+    - Linear velocities
+    - Joint angles
+    - Peak velocities
+    - Event timing (first move, foot plant, contact)
+    - Kinematic sequence
+    - Momentum data (344 columns for momentum-energy type)
+    - Inverse kinematics (211 columns for inverse-kinematics type)
+    
+    Args:
+        session_id: Reboot Motion session UUID
+        movement_type_id: 1=baseball-hitting, 2=baseball-pitching (default: 1)
+        org_player_id: Organization's player ID (optional)
+        data_type: Type of data export (default: momentum-energy)
+        data_format: File format for export (default: csv)
+    
+    Returns:
+        Data Export object with download_urls to fetch the biomechanics data
+    """
+    try:
+        # Check OAuth credentials
+        username = os.environ.get("REBOOT_USERNAME")
+        password = os.environ.get("REBOOT_PASSWORD")
+        
+        if not username or not password:
+            raise HTTPException(
+                status_code=500,
+                detail="REBOOT_USERNAME and REBOOT_PASSWORD not configured"
+            )
+        
+        # Initialize sync service to get OAuth token
+        import requests
+        from sync_service import RebootMotionSync
+        
+        sync = RebootMotionSync(username=username, password=password)
+        token = sync._get_access_token()
+        
+        # Build request payload (all fields are required according to docs)
+        payload = {
+            "session_id": session_id,
+            "org_player_id": org_player_id,
+            "movement_type_id": movement_type_id,
+            "data_type": data_type,
+            "data_format": data_format
+        }
+        
+        # Call Reboot Motion Data Export API (POST method)
+        endpoint = "https://api.rebootmotion.com/data_export"
+        headers = {
+            'Authorization': f'Bearer {token}',  # Standard Authorization header (not Authentication)
+            'Content-Type': 'application/json'
+        }
+        
+        logger.info(f"📊 Creating Data Export for session {session_id}")
+        logger.info(f"   Payload: {payload}")
+        
+        response = requests.post(endpoint, headers=headers, json=payload, timeout=60)
+        
+        logger.info(f"📥 Reboot API Response:")
+        logger.info(f"   Status Code: {response.status_code}")
+        logger.info(f"   Headers: {dict(response.headers)}")
+        logger.info(f"   Body: {response.text[:500]}")  # First 500 chars
+        
+        if response.status_code == 200:
+            data = response.json()
+            logger.info(f"✅ Data Export created successfully")
+            logger.info(f"   Download URLs available: {len(data.get('download_urls', []))}")
+            return {
+                "status": "success",
+                "session_id": session_id,
+                "movement_type_id": movement_type_id,
+                "data_type": data_type,
+                "data_format": data_format,
+                "export_data": data
+            }
+        else:
+            logger.error(f"❌ Reboot API error: {response.status_code}")
+            logger.error(f"   Response: {response.text}")
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"Reboot Motion API error: {response.text}"
+            )
+            
+    except requests.RequestException as e:
+        import traceback
+        error_msg = f"Request error: {str(e)}" if str(e) else f"Request error: {type(e).__name__}"
+        logger.error(f"❌ {error_msg}")
+        logger.error(f"   Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=error_msg)
+    except Exception as e:
+        import traceback
+        error_msg = f"Error creating Data Export: {str(e)}" if str(e) else f"Error: {type(e).__name__} with empty message"
+        logger.error(f"❌ {error_msg}")
+        logger.error(f"   Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=error_msg)
+
+
+# Get sync status
+@app.get("/sync/status")
+def get_sync_status(db: Session = Depends(get_db)):
+    """Get status of last data sync"""
+    last_sync = db.query(SyncLog)\
+                 .order_by(SyncLog.started_at.desc())\
+                 .first()
+    
+    if not last_sync:
+        return {
+            "message": "No sync operations recorded yet",
+            "status": "never_synced"
+        }
+    
+    return last_sync.to_dict()
+
+
+# Trigger manual sync
+@app.post("/sync/trigger")
+async def trigger_sync(db: Session = Depends(get_db)):
+    """Trigger manual data sync from Reboot Motion API"""
+    try:
+        # Check if OAuth credentials are configured
+        username = os.environ.get("REBOOT_USERNAME")
+        password = os.environ.get("REBOOT_PASSWORD")
+        
+        if not username or not password:
+            raise HTTPException(
+                status_code=500,
+                detail="REBOOT_USERNAME and REBOOT_PASSWORD environment variables must be set"
+            )
+        
+        # Initialize sync service with OAuth credentials
+        sync_service = RebootMotionSync(username=username, password=password, db_session=db)
+        
+        logger.info("🔄 Starting data sync from Reboot Motion API...")
+        
+        # Create sync log entry
+        sync_log = SyncLog(
+            started_at=datetime.now(),
+            status="in_progress"
+        )
+        db.add(sync_log)
+        db.commit()
+        
+        try:
+            # Perform sync
+            result = await sync_service.sync_all_data()
+            
+            # Update sync log
+            sync_log.completed_at = datetime.now()
+            sync_log.status = "completed"
+            sync_log.players_synced = result.get("players_synced", 0)
+            sync_log.sessions_synced = result.get("sessions_synced", 0)
+            sync_log.biomechanics_synced = result.get("biomechanics_synced", 0)
+            sync_log.error_message = None
+            db.commit()
+            
+            logger.info(f"✅ Sync completed: {result['players_synced']} players, {result['sessions_synced']} sessions")
+            
+            return {
+                "status": "success",
+                "message": "Data sync completed successfully",
+                **result
+            }
+            
+        except Exception as sync_error:
+            # Update sync log with error
+            sync_log.completed_at = datetime.now()
+            sync_log.status = "failed"
+            sync_log.error_message = str(sync_error)
+            db.commit()
+            
+            logger.error(f"❌ Sync failed: {sync_error}")
+            raise HTTPException(status_code=500, detail=f"Sync failed: {str(sync_error)}")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error triggering sync: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Get database stats
+@app.get("/stats")
+def get_stats(db: Session = Depends(get_db)):
+    """Get database statistics"""
+    try:
+        player_count = db.query(Player).count()
+        session_count = db.query(SessionModel).count()
+        biomech_count = db.query(BiomechanicsData).count()
+        synced_sessions = db.query(SessionModel).filter(SessionModel.data_synced == True).count()
+        
+        return {
+            "total_players": player_count,
+            "total_sessions": session_count,
+            "synced_sessions": synced_sessions,
+            "pending_sessions": session_count - synced_sessions,
+            "biomechanics_records": biomech_count
+        }
+    except Exception as e:
+        logger.error(f"Error getting stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ========================================
+# PRIORITY 12: ENHANCED ANALYSIS API
+# ========================================
+from pydantic import BaseModel
+
+class EnhancedAnalysisRequest(BaseModel):
+    """Request model for enhanced analysis with Priority 10 + 11"""
+    # Scores
+    ground_score: int
+    engine_score: int
+    weapon_score: int
+    
+    # Athlete data
+    height_inches: float
+    wingspan_inches: Optional[float] = None
+    weight_lbs: float
+    age: int
+    bat_weight_oz: int = 30
+    
+    # Optional actual data
+    actual_bat_speed_mph: Optional[float] = None
+    rotation_ke_joules: Optional[float] = None
+    translation_ke_joules: Optional[float] = None
+
+
+@app.post("/analyze/enhanced")
+def enhanced_analysis(request: EnhancedAnalysisRequest):
+    """
+    Enhanced analysis with Priority 9 + 10 + 11
+    
+    This endpoint combines:
+    - Priority 9: Kinetic Capacity Framework
+    - Priority 10: Swing Rehab Recommendation Engine
+    - Priority 11: BioSwing Motor-Preference System
+    
+    Returns comprehensive analysis including:
+    - Motor preference detection (SPINNER/GLIDER/LAUNCHER)
+    - Adjusted scores (motor-aware scoring)
+    - Kinetic capacity (bat speed potential)
+    - Gap analysis (actual vs potential)
+    - Energy leak identification
+    - Personalized correction plan (drills, strength work, timeline)
+    """
+    try:
+        result = enhance_analysis_with_priority_10_11(
+            ground_score=request.ground_score,
+            engine_score=request.engine_score,
+            weapon_score=request.weapon_score,
+            height_inches=request.height_inches,
+            wingspan_inches=request.wingspan_inches,
+            weight_lbs=request.weight_lbs,
+            age=request.age,
+            bat_weight_oz=request.bat_weight_oz,
+            actual_bat_speed_mph=request.actual_bat_speed_mph,
+            rotation_ke_joules=request.rotation_ke_joules,
+            translation_ke_joules=request.translation_ke_joules
+        )
+        
+        return {
+            "status": "success",
+            "data": result
+        }
+    except Exception as e:
+        logger.error(f"Error in enhanced analysis: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Analysis error: {str(e)}")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
