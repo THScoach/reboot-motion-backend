@@ -148,6 +148,179 @@
             transform: none;
         }
         
+        /* KRS Loading Spinner */
+        #krsLoading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .loading-container {
+            text-align: center;
+        }
+        
+        .loading-text {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 8px;
+        }
+        
+        .loading-subtext {
+            font-size: 14px;
+            color: #6B7280;
+        }
+        
+        /* Error State */
+        .error-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, #FEE2E2 0%, #FCA5A5 100%);
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        .error-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        .error-state h2 {
+            color: #991B1B;
+            margin-bottom: 10px;
+        }
+        
+        .error-state p {
+            color: #7F1D1D;
+            margin-bottom: 20px;
+        }
+        
+        .retry-button {
+            background: #DC2626;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .retry-button:hover {
+            background: #B91C1C;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        .empty-icon {
+            font-size: 80px;
+            margin-bottom: 24px;
+        }
+        
+        .empty-state h2 {
+            color: #0C4A6E;
+            font-size: 28px;
+            margin-bottom: 16px;
+        }
+        
+        .empty-state > p {
+            color: #075985;
+            font-size: 16px;
+            max-width: 600px;
+            margin: 0 auto 32px;
+            line-height: 1.6;
+        }
+        
+        .upload-cta-button {
+            background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+        }
+        
+        .upload-cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(6, 182, 212, 0.4);
+        }
+        
+        .example-preview {
+            margin-top: 48px;
+            padding-top: 32px;
+            border-top: 1px solid #BAE6FD;
+        }
+        
+        .preview-label {
+            font-size: 14px;
+            color: #0C4A6E;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .preview-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .preview-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .preview-emoji {
+            font-size: 24px;
+        }
+        
+        .preview-item span:last-child {
+            color: #0C4A6E;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .empty-state h2 {
+                font-size: 24px;
+            }
+            
+            .upload-cta-button {
+                font-size: 16px;
+                padding: 14px 28px;
+            }
+            
+            .preview-items {
+                grid-template-columns: 1fr;
+            }
+        }
+        
         .loading {
             display: none;
             text-align: center;
@@ -462,6 +635,15 @@
             <p style="color: #6b7280;">Coach Rick is evaluating your mechanics</p>
         </div>
         
+        <!-- KRS Loading Spinner -->
+        <div id="krsLoading" style="display: none;">
+            <div class="loading-container">
+                <div class="spinner"></div>
+                <p class="loading-text">Generating your KRS report...</p>
+                <p class="loading-subtext">Analyzing biomechanics and motor patterns</p>
+            </div>
+        </div>
+        
         <!-- Error -->
         <div class="error" id="error">
             <strong>❌ Analysis Failed</strong>
@@ -733,25 +915,129 @@
         }
         
         async function fetchPlayerReport(sessionId) {
+            // Show loading spinner
+            const krsLoadingEl = document.getElementById('krsLoading');
+            const krsHeroCardEl = document.getElementById('krsHeroCard');
+            const fourBCardsEl = document.getElementById('fourBCards');
+            
+            if (krsLoadingEl) krsLoadingEl.style.display = 'flex';
+            if (krsHeroCardEl) krsHeroCardEl.style.display = 'none';
+            if (fourBCardsEl) fourBCardsEl.style.display = 'none';
+            
             try {
                 const response = await fetch(`/api/sessions/${sessionId}/report`);
-                if (response.ok) {
-                    const report = await response.json();
-                    displayKRS(report, sessionId);
-                    display4BCards(report);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
+                
+                const report = await response.json();
+                
+                // Hide loading spinner
+                if (krsLoadingEl) krsLoadingEl.style.display = 'none';
+                
+                displayKRS(report, sessionId);
+                display4BCards(report);
+                
             } catch (error) {
-                console.log('PlayerReport not yet available:', error);
-                // KRS section and 4B cards will remain hidden if report not ready
+                // Hide loading spinner
+                if (krsLoadingEl) krsLoadingEl.style.display = 'none';
+                
+                console.error('Failed to fetch player report:', error);
+                showErrorState(error.message);
+            }
+        }
+        
+        function showErrorState(errorMessage) {
+            const errorHTML = `
+                <div class="error-state">
+                    <div class="error-icon">⚠️</div>
+                    <h2>Unable to Load Report</h2>
+                    <p>${errorMessage || 'Something went wrong. Please try again.'}</p>
+                    <button class="retry-button" onclick="location.reload()">
+                        Try Again
+                    </button>
+                </div>
+            `;
+            
+            const krsHeroCardEl = document.getElementById('krsHeroCard');
+            if (krsHeroCardEl) {
+                krsHeroCardEl.style.display = 'block';
+                krsHeroCardEl.innerHTML = errorHTML;
+            }
+            
+            const fourBCardsEl = document.getElementById('fourBCards');
+            if (fourBCardsEl) fourBCardsEl.style.display = 'none';
+        }
+        
+        function showEmptyState() {
+            const emptyStateHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📊</div>
+                    <h2>Ready to unlock your hitting potential?</h2>
+                    <p>Upload your first swing video to see your KRS score and get personalized training recommendations from Coach Rick.</p>
+                    <button class="upload-cta-button" onclick="scrollToUpload()">
+                        Upload Your First Swing →
+                    </button>
+                    <div class="example-preview">
+                        <p class="preview-label">Here's what you'll get:</p>
+                        <div class="preview-items">
+                            <div class="preview-item">
+                                <span class="preview-emoji">⚡</span>
+                                <span>KRS Score (0-100)</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-emoji">🧠</span>
+                                <span>Motor Profile Analysis</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-emoji">💪</span>
+                                <span>4B Framework Breakdown</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-emoji">🎯</span>
+                                <span>Personalized Drills</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const krsHeroCardEl = document.getElementById('krsHeroCard');
+            if (krsHeroCardEl) {
+                krsHeroCardEl.style.display = 'block';
+                krsHeroCardEl.innerHTML = emptyStateHTML;
+            }
+            
+            const fourBCardsEl = document.getElementById('fourBCards');
+            if (fourBCardsEl) fourBCardsEl.style.display = 'none';
+        }
+        
+        function scrollToUpload() {
+            const uploadSection = document.querySelector('.input-card');
+            if (uploadSection) {
+                uploadSection.scrollIntoView({ behavior: 'smooth' });
             }
         }
         
         function displayKRS(report, sessionId) {
+            // Validate report exists
+            if (!report || !report.krs_total) {
+                showEmptyState();
+                return;
+            }
+            
             // Show KRS card
             document.getElementById('krsHeroCard').style.display = 'block';
             
+            // Safe field access with fallbacks
+            const krsTotal = report.krs_total || 0;
+            const krsLevel = report.krs_level || 'UNKNOWN';
+            const creationScore = report.creation_score || 0;
+            const transferScore = report.transfer_score || 0;
+            
             // Populate KRS values from NEW PlayerReport structure
-            document.getElementById('krsTotal').textContent = Math.round(report.krs_total || 0);
+            document.getElementById('krsTotal').textContent = Math.round(krsTotal);
             
             // Add level emoji based on level
             const levelEmojis = {
@@ -761,17 +1047,21 @@
                 'ADVANCED': '🚀',
                 'ELITE': '⭐'
             };
-            const emoji = levelEmojis[report.krs_level] || '📊';
-            document.getElementById('krsLevel').textContent = `${report.krs_level} ${emoji}`;
-            document.getElementById('krsCreation').textContent = Math.round(report.creation_score || 0);
-            document.getElementById('krsTransfer').textContent = Math.round(report.transfer_score || 0);
+            const emoji = levelEmojis[krsLevel] || '📊';
+            document.getElementById('krsLevel').textContent = `${krsLevel} ${emoji}`;
+            document.getElementById('krsCreation').textContent = Math.round(creationScore);
+            document.getElementById('krsTransfer').textContent = Math.round(transferScore);
             
-            // Add On-Table Gain if available
-            if (report.on_table_gain_value) {
-                const gainDiv = document.getElementById('krsOnTableGain');
-                if (gainDiv) {
-                    gainDiv.textContent = `+${report.on_table_gain_value} ${report.on_table_gain_metric} available`;
+            // Only show On-Table Gain if it exists and is positive
+            const onTableGain = report.on_table_gain_value;
+            const gainDiv = document.getElementById('krsOnTableGain');
+            if (gainDiv) {
+                if (onTableGain && onTableGain > 0) {
+                    const gainMetric = report.on_table_gain_metric || 'mph';
+                    gainDiv.textContent = `On Table: +${onTableGain.toFixed(1)} ${gainMetric} available`;
                     gainDiv.style.display = 'block';
+                } else {
+                    gainDiv.style.display = 'none';
                 }
             }
             
@@ -780,95 +1070,110 @@
         }
         
         function display4BCards(report) {
+            // Validate report exists
+            if (!report) {
+                const fourBCardsEl = document.getElementById('fourBCards');
+                if (fourBCardsEl) fourBCardsEl.style.display = 'none';
+                return;
+            }
+            
             // Show 4B cards container
             document.getElementById('fourBCards').style.display = 'block';
             
-            // BRAIN Card (Motor Profile) - NEW structure
+            // BRAIN Card (Motor Profile) - NEW structure with safe field access
             const brainContent = document.getElementById('brainCardContent');
-            const motorProfile = report.brain_motor_profile || 'Unknown';
-            const confidence = report.brain_confidence || 0;
-            const timing = report.brain_timing ? (report.brain_timing * 1000).toFixed(0) : '0';
-            
-            brainContent.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
-                    <span style="font-size: 1.5rem; font-weight: 700; color: #8B5CF6;">${motorProfile}</span>
-                    <span style="background: rgba(139, 92, 246, 0.2); color: #8B5CF6; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">${Math.round(confidence)}%</span>
-                </div>
-                <p style="margin: 0; font-size: 0.95rem; opacity: 0.8;">Motor Profile Identity</p>
-                <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(139, 92, 246, 0.1); border-radius: 8px;">
-                    <div style="font-size: 0.85rem;">
-                        <strong>Timing:</strong> ${timing}ms (load to contact)
+            if (brainContent) {
+                const motorProfile = report.brain_motor_profile || 'Not Available';
+                const confidence = report.brain_confidence || 0;
+                const timing = report.brain_timing ? (report.brain_timing * 1000).toFixed(0) : 'N/A';
+                
+                brainContent.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                        <span style="font-size: 1.5rem; font-weight: 700; color: #8B5CF6;">${motorProfile}</span>
+                        <span style="background: rgba(139, 92, 246, 0.2); color: #8B5CF6; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">${Math.round(confidence)}%</span>
                     </div>
-                </div>
-            `;
+                    <p style="margin: 0; font-size: 0.95rem; opacity: 0.8;">Motor Profile Identity</p>
+                    <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(139, 92, 246, 0.1); border-radius: 8px;">
+                        <div style="font-size: 0.85rem;">
+                            <strong>Timing:</strong> ${timing}ms (load to contact)
+                        </div>
+                    </div>
+                `;
+            }
             
-            // BODY Card (Creation) - NEW structure
+            // BODY Card (Creation) - NEW structure with safe field access
             const bodyContent = document.getElementById('bodyCardContent');
-            const creationScore = report.body_creation_score || 0;
-            const physicalCapacity = report.body_physical_capacity_mph || 0;
-            const peakForce = report.body_peak_force_n || 0;
+            if (bodyContent) {
+                const creationScore = report.body_creation_score || 0;
+                const physicalCapacity = report.body_physical_capacity_mph || 0;
+                const peakForce = report.body_peak_force_n || 0;
+                
+                bodyContent.innerHTML = `
+                    <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <span style="font-size: 2rem; font-weight: 700; color: #10B981;">${Math.round(creationScore)}</span>
+                        <span style="font-size: 0.9rem; opacity: 0.7;">/ 100</span>
+                    </div>
+                    <div style="background: rgba(16, 185, 129, 0.1); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.75rem;">
+                        <div style="background: #10B981; height: 100%; width: ${Math.min(creationScore, 100)}%; transition: width 1s ease-out;"></div>
+                    </div>
+                    <div style="font-size: 0.85rem; opacity: 0.8;">
+                        <div style="margin-bottom: 0.5rem;"><strong>Power Creation Score</strong></div>
+                        <div>Physical Capacity: <strong>${Math.round(physicalCapacity)} mph</strong></div>
+                        <div>Peak Force: <strong>${Math.round(peakForce)} N</strong></div>
+                    </div>
+                `;
+            }
             
-            bodyContent.innerHTML = `
-                <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.75rem;">
-                    <span style="font-size: 2rem; font-weight: 700; color: #10B981;">${Math.round(creationScore)}</span>
-                    <span style="font-size: 0.9rem; opacity: 0.7;">/ 100</span>
-                </div>
-                <div style="background: rgba(16, 185, 129, 0.1); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.75rem;">
-                    <div style="background: #10B981; height: 100%; width: ${creationScore}%; transition: width 1s ease-out;"></div>
-                </div>
-                <div style="font-size: 0.85rem; opacity: 0.8;">
-                    <div style="margin-bottom: 0.5rem;"><strong>Power Creation Score</strong></div>
-                    <div>Physical Capacity: <strong>${Math.round(physicalCapacity)} mph</strong></div>
-                    <div>Peak Force: <strong>${Math.round(peakForce)} N</strong></div>
-                </div>
-            `;
-            
-            // BAT Card (Transfer) - NEW structure
+            // BAT Card (Transfer) - NEW structure with safe field access
             const batContent = document.getElementById('batCardContent');
-            const transferScore = report.bat_transfer_score || 0;
-            const efficiency = report.bat_transfer_efficiency || 0;
-            const attackAngle = report.bat_attack_angle_deg || 0;
+            if (batContent) {
+                const transferScore = report.bat_transfer_score || 0;
+                const efficiency = report.bat_transfer_efficiency || 0;
+                const attackAngle = report.bat_attack_angle_deg || 0;
+                
+                batContent.innerHTML = `
+                    <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <span style="font-size: 2rem; font-weight: 700; color: #F59E0B;">${Math.round(transferScore)}</span>
+                        <span style="font-size: 0.9rem; opacity: 0.7;">/ 100</span>
+                    </div>
+                    <div style="background: rgba(245, 158, 11, 0.1); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.75rem;">
+                        <div style="background: #F59E0B; height: 100%; width: ${Math.min(transferScore, 100)}%; transition: width 1s ease-out;"></div>
+                    </div>
+                    <div style="font-size: 0.85rem; opacity: 0.8;">
+                        <div style="margin-bottom: 0.5rem;"><strong>Energy Transfer Score</strong></div>
+                        <div>Efficiency: <strong>${Math.round(efficiency)}%</strong></div>
+                        <div>Attack Angle: <strong>${attackAngle}°</strong></div>
+                    </div>
+                `;
+            }
             
-            batContent.innerHTML = `
-                <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.75rem;">
-                    <span style="font-size: 2rem; font-weight: 700; color: #F59E0B;">${Math.round(transferScore)}</span>
-                    <span style="font-size: 0.9rem; opacity: 0.7;">/ 100</span>
-                </div>
-                <div style="background: rgba(245, 158, 11, 0.1); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.75rem;">
-                    <div style="background: #F59E0B; height: 100%; width: ${transferScore}%; transition: width 1s ease-out;"></div>
-                </div>
-                <div style="font-size: 0.85rem; opacity: 0.8;">
-                    <div style="margin-bottom: 0.5rem;"><strong>Energy Transfer Score</strong></div>
-                    <div>Efficiency: <strong>${Math.round(efficiency)}%</strong></div>
-                    <div>Attack Angle: <strong>${attackAngle}°</strong></div>
-                </div>
-            `;
-            
-            // BALL Card (Outcomes) - NEW structure
+            // BALL Card (Outcomes) - NEW structure with safe field access
             const ballContent = document.getElementById('ballCardContent');
-            const exitVelo = report.ball_exit_velocity_mph || 0;
-            const capacity = report.ball_capacity_mph || 0;
-            const launchAngle = report.ball_launch_angle_deg || 0;
-            const contactQuality = report.ball_contact_quality || 'Good';
-            
-            ballContent.innerHTML = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
-                    <div>
-                        <div style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 0.25rem;">Exit Velo</div>
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #EF4444;">${Math.round(exitVelo)}<span style="font-size: 0.9rem; opacity: 0.7;"> mph</span></div>
+            if (ballContent) {
+                const exitVelo = report.ball_exit_velocity_mph || 0;
+                const capacity = report.ball_capacity_mph || 0;
+                const launchAngle = report.ball_launch_angle_deg || 0;
+                const contactQuality = report.ball_contact_quality || 'UNKNOWN';
+                
+                ballContent.innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                        <div>
+                            <div style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 0.25rem;">Exit Velo</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #EF4444;">${Math.round(exitVelo)}<span style="font-size: 0.9rem; opacity: 0.7;"> mph</span></div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 0.25rem;">Capacity</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #EF4444;">${Math.round(capacity)}<span style="font-size: 0.9rem; opacity: 0.7;"> mph</span></div>
+                        </div>
                     </div>
-                    <div>
-                        <div style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 0.25rem;">Capacity</div>
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #EF4444;">${Math.round(capacity)}<span style="font-size: 0.9rem; opacity: 0.7;"> mph</span></div>
+                    <div style="font-size: 0.85rem; opacity: 0.8;">
+                        <div>Launch Angle: <strong>${launchAngle}°</strong></div>
+                        <div style="margin-top: 0.5rem; padding: 0.5rem; background: rgba(239, 68, 68, 0.1); border-radius: 6px;">
+                            Contact: <strong>${contactQuality}</strong>
+                        </div>
                     </div>
-                </div>
-                <div style="font-size: 0.85rem; opacity: 0.8;">
-                    <div>Launch Angle: <strong>${launchAngle}°</strong></div>
-                    <div style="margin-top: 0.5rem; padding: 0.5rem; background: rgba(239, 68, 68, 0.1); border-radius: 6px;">
-                        Contact: <strong>${contactQuality}</strong>
-                    </div>
-                </div>
-            `;
+                `;
+            }
         }
         
         function displayMotorProfile(profile) {
