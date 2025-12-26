@@ -99,6 +99,15 @@ async def coach_rick_analysis():
     with open("templates/coach_rick_analysis.html", "r") as f:
         return f.read()
 
+# Serve KRS Demo Page (standalone demo with mock data)
+@app.get("/krs-demo", response_class=HTMLResponse)
+async def krs_demo():
+    """
+    Standalone demo of KRS Hero + 4B Framework UI with mock data
+    """
+    with open("templates/krs_demo.html", "r") as f:
+        return f.read()
+
 # Serve Swing DNA Upload UI
 @app.get("/swing-dna/upload", response_class=HTMLResponse)
 async def swing_dna_upload():
