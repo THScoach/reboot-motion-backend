@@ -11,6 +11,9 @@ from datetime import datetime, timedelta
 from database import get_db
 from models import PlayerReport, Player, Session as DBSession
 from krs_calculator import calculate_krs, calculate_on_table_gain
+import sys
+sys.path.insert(0, '.')
+from app.services.report_transformer import transform_coach_rick_to_report
 import logging
 
 logger = logging.getLogger(__name__)
@@ -438,6 +441,92 @@ async def create_player_report(
     except Exception as e:
         db.rollback()
         logger.error(f"Error creating report: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@router.post("/reports/from-coach-rick")
+async def create_report_from_coach_rick(
+    session_id: str,
+    player_id: int,
+    coach_rick_data: dict,
+    db: Session = Depends(get_db)
+):
+    """
+    Create PlayerReport from Coach Rick analysis output.
+    
+    Priority 4: Data Transformer Integration
+    
+    Args:
+        session_id: Session UUID
+        player_id: Player database ID
+        coach_rick_data: Raw Coach Rick analysis output
+    
+    Returns:
+        PlayerReport with KRS scoring and 4B Framework metrics
+    
+    Example coach_rick_data:
+        {
+            "bat_speed_mph": 82.0,
+            "exit_velocity_mph": 99.0,
+            "efficiency_percent": 111.0,
+            "tempo_score": 87.0,
+            "stability_score": 92.0,
+            "motor_profile": {"type": "SLINGSHOTTER", "confidence": 92.0}
+        }
+    """
+    try:
+        # Validate player exists
+        player = db.query(Player).filter(Player.id == player_id).first()
+        if not player:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Player {player_id} not found"
+            )
+        
+        # Transform Coach Rick data to PlayerReport format
+        logger.info(f"Transforming Coach Rick data for session {session_id}")
+        report_data = transform_coach_rick_to_report(
+            coach_rick_data,
+            session_id,
+            player_id
+        )
+        
+        # Create PlayerReport from transformed data
+        report = PlayerReport(**report_data)
+        
+        db.add(report)
+        db.commit()
+        db.refresh(report)
+        
+        logger.info(
+            f"✅ Created PlayerReport from Coach Rick: "
+            f"Session {session_id}, KRS {report.krs_total} ({report.krs_level})"
+        )
+        
+        return {
+            "message": "PlayerReport created successfully from Coach Rick analysis",
+            "session_id": session_id,
+            "player_id": player_id,
+            "krs_total": report.krs_total,
+            "krs_level": report.krs_level,
+            "motor_profile": report.brain_motor_profile,
+            "report": report.to_dict(include_player=True)
+        }
+    
+    except ValueError as e:
+        logger.error(f"Invalid Coach Rick data: {str(e)}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid Coach Rick data: {str(e)}"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error creating report from Coach Rick: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=f"Internal server error: {str(e)}"
