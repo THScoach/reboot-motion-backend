@@ -1,0 +1,158 @@
+{
+  "$schema": "https://tr.designtokens.org/format/draft/spec/",
+  "name": "Catching Barrels Design Tokens",
+  "version": "1.0.0",
+  "description": "Design tokens for Catching Barrels PWA - Clean Athletic Professional",
+  "colors": {
+    "background": {
+      "primary": { "value": "#FAFAFA", "type": "color", "description": "Gray-50, main background" },
+      "secondary": { "value": "#F3F4F6", "type": "color", "description": "Gray-100, secondary background" },
+      "card": { "value": "#FFFFFF", "type": "color", "description": "White, card background" }
+    },
+    "brand": {
+      "primary": { "value": "#06B6D4", "type": "color", "description": "Electric Cyan, primary brand color" },
+      "primary-dark": { "value": "#0284C7", "type": "color", "description": "Darker cyan for hover states" },
+      "primary-darker": { "value": "#0369A1", "type": "color", "description": "Even darker for active states" }
+    },
+    "semantic": {
+      "success": { "value": "#10B981", "type": "color", "description": "Success Green" },
+      "warning": { "value": "#F59E0B", "type": "color", "description": "Warning Amber" },
+      "error": { "value": "#EF4444", "type": "color", "description": "Error Red" },
+      "info": { "value": "#3B82F6", "type": "color", "description": "Info Blue" }
+    },
+    "text": {
+      "primary": { "value": "#111827", "type": "color", "description": "Gray-900, primary text" },
+      "secondary": { "value": "#374151", "type": "color", "description": "Gray-700, secondary text" },
+      "tertiary": { "value": "#6B7280", "type": "color", "description": "Gray-500, tertiary text" },
+      "quaternary": { "value": "#9CA3AF", "type": "color", "description": "Gray-400, muted text" }
+    },
+    "border": {
+      "default": { "value": "#E5E7EB", "type": "color", "description": "Gray-200, default border" },
+      "light": { "value": "#F3F4F6", "type": "color", "description": "Gray-100, light border" },
+      "dark": { "value": "#D1D5DB", "type": "color", "description": "Gray-300, dark border" }
+    },
+    "motorProfile": {
+      "spinner": { "value": "#10B981", "type": "color", "description": "Success Green" },
+      "slingshotter": { "value": "#F59E0B", "type": "color", "description": "Amber" },
+      "whipper": { "value": "#EF4444", "type": "color", "description": "Red" },
+      "torquer": { "value": "#8B5CF6", "type": "color", "description": "Purple" },
+      "tilter": { "value": "#3B82F6", "type": "color", "description": "Blue" },
+      "hybrid": { "value": "#EC4899", "type": "color", "description": "Pink" }
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "base": { "value": "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", "type": "fontFamily" },
+      "mono": { "value": "'SF Mono', 'Roboto Mono', 'Courier New', monospace", "type": "fontFamily" }
+    },
+    "fontSize": {
+      "display-02": { "value": "96px", "type": "dimension", "description": "Extra large display" },
+      "display-01": { "value": "80px", "type": "dimension", "description": "Large display" },
+      "heading-01": { "value": "32px", "type": "dimension", "description": "Page titles" },
+      "heading-02": { "value": "24px", "type": "dimension", "description": "Section headers" },
+      "heading-03": { "value": "20px", "type": "dimension", "description": "Card titles" },
+      "heading-04": { "value": "18px", "type": "dimension", "description": "Subsection headers" },
+      "body-01": { "value": "16px", "type": "dimension", "description": "Body text" },
+      "body-02": { "value": "14px", "type": "dimension", "description": "Small body text" },
+      "caption-01": { "value": "12px", "type": "dimension", "description": "Captions, labels" }
+    },
+    "fontWeight": {
+      "regular": { "value": "400", "type": "number" },
+      "medium": { "value": "500", "type": "number" },
+      "semibold": { "value": "600", "type": "number" },
+      "bold": { "value": "700", "type": "number" }
+    },
+    "lineHeight": {
+      "tight": { "value": "1.2", "type": "number", "description": "For headings" },
+      "normal": { "value": "1.5", "type": "number", "description": "For body text" },
+      "relaxed": { "value": "1.75", "type": "number", "description": "For large text blocks" }
+    },
+    "letterSpacing": {
+      "tight": { "value": "-0.02em", "type": "dimension" },
+      "normal": { "value": "0", "type": "dimension" },
+      "wide": { "value": "0.05em", "type": "dimension" }
+    }
+  },
+  "spacing": {
+    "base": { "value": "4px", "type": "dimension", "description": "Base spacing unit" },
+    "01": { "value": "4px", "type": "dimension" },
+    "02": { "value": "8px", "type": "dimension" },
+    "03": { "value": "12px", "type": "dimension" },
+    "04": { "value": "16px", "type": "dimension" },
+    "05": { "value": "20px", "type": "dimension" },
+    "06": { "value": "24px", "type": "dimension" },
+    "07": { "value": "32px", "type": "dimension" },
+    "08": { "value": "40px", "type": "dimension" },
+    "09": { "value": "48px", "type": "dimension" },
+    "10": { "value": "64px", "type": "dimension" }
+  },
+  "borderRadius": {
+    "small": { "value": "4px", "type": "dimension", "description": "Badges, pills" },
+    "medium": { "value": "8px", "type": "dimension", "description": "Buttons, inputs" },
+    "large": { "value": "12px", "type": "dimension", "description": "Cards" },
+    "xlarge": { "value": "16px", "type": "dimension", "description": "Hero cards" },
+    "circle": { "value": "50%", "type": "dimension", "description": "Circular elements" }
+  },
+  "shadows": {
+    "01": { 
+      "value": "0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)", 
+      "type": "shadow",
+      "description": "Subtle shadow for cards"
+    },
+    "02": { 
+      "value": "0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06)", 
+      "type": "shadow",
+      "description": "Medium shadow for elevated elements"
+    },
+    "03": { 
+      "value": "0 10px 25px rgba(0, 0, 0, 0.1), 0 6px 10px rgba(0, 0, 0, 0.05)", 
+      "type": "shadow",
+      "description": "Large shadow for modals, popovers"
+    }
+  },
+  "animation": {
+    "duration": {
+      "fast": { "value": "150ms", "type": "duration" },
+      "normal": { "value": "200ms", "type": "duration" },
+      "medium": { "value": "300ms", "type": "duration" },
+      "slow": { "value": "500ms", "type": "duration" }
+    },
+    "easing": {
+      "ease-in": { "value": "cubic-bezier(0.4, 0, 1, 1)", "type": "cubicBezier" },
+      "ease-out": { "value": "cubic-bezier(0, 0, 0.2, 1)", "type": "cubicBezier" },
+      "ease-in-out": { "value": "cubic-bezier(0.4, 0, 0.2, 1)", "type": "cubicBezier" }
+    }
+  },
+  "sizing": {
+    "icon": {
+      "small": { "value": "16px", "type": "dimension" },
+      "medium": { "value": "24px", "type": "dimension" },
+      "large": { "value": "32px", "type": "dimension" },
+      "xlarge": { "value": "48px", "type": "dimension" },
+      "xxlarge": { "value": "96px", "type": "dimension" }
+    },
+    "button": {
+      "height": { "value": "44px", "type": "dimension", "description": "Min touch target" },
+      "height-small": { "value": "32px", "type": "dimension" },
+      "height-large": { "value": "56px", "type": "dimension" }
+    },
+    "input": {
+      "height": { "value": "48px", "type": "dimension" }
+    }
+  },
+  "breakpoints": {
+    "mobile": { "value": "375px", "type": "dimension", "description": "Base mobile" },
+    "tablet": { "value": "768px", "type": "dimension", "description": "Tablet and up" },
+    "desktop": { "value": "1024px", "type": "dimension", "description": "Desktop and up" },
+    "wide": { "value": "1440px", "type": "dimension", "description": "Wide desktop" }
+  },
+  "zIndex": {
+    "base": { "value": "0", "type": "number" },
+    "dropdown": { "value": "100", "type": "number" },
+    "sticky": { "value": "200", "type": "number" },
+    "overlay": { "value": "300", "type": "number" },
+    "modal": { "value": "400", "type": "number" },
+    "popover": { "value": "500", "type": "number" },
+    "toast": { "value": "600", "type": "number" }
+  }
+}
