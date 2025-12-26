@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is not set!")
+    # Fallback to SQLite for local development or when DATABASE_URL is not set
+    logger.warning("⚠️ DATABASE_URL not set, using SQLite fallback")
+    DATABASE_URL = "sqlite:///./catching_barrels.db"
 
 # Create engine with connection pooling
 engine = create_engine(
