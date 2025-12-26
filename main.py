@@ -3,8 +3,11 @@ Production FastAPI Backend - Reboot Motion Athlete App
 With PostgreSQL Database Integration
 """
 
-from fastapi import FastAPI, HTTPException, Query, Depends
+from fastapi import FastAPI, HTTPException, Query, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from datetime import datetime
@@ -50,6 +53,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files and templates
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
 # Include CSV upload router
 app.include_router(csv_router, tags=["CSV Import"])
@@ -105,10 +112,22 @@ def read_root():
             "csv_upload_info": "GET /csv-upload-info",
             "coach_rick_ai": "POST /api/v1/reboot-lite/analyze-with-coach (NEW)",
             "coach_rick_health": "GET /api/v1/reboot-lite/coach-rick/health",
+            "coach_rick_analysis_ui": "GET /coach-rick-analysis (NEW - Phase 2 UI)",
             "sync_status": "/sync/status",
             "docs": "/docs"
         }
     }
+
+
+# Coach Rick Analysis UI (Phase 2 - KRS Hero + 4B Framework)
+@app.get("/coach-rick-analysis", response_class=HTMLResponse)
+async def coach_rick_analysis_page(request: Request):
+    """
+    Serve the Coach Rick Analysis UI with KRS Hero Card and 4B Framework
+    Phase 2 Enhancement: Displays PlayerReport data with visual cards
+    """
+    return templates.TemplateResponse("coach_rick_analysis.html", {"request": request})
+
 
 
 # Health check
