@@ -549,6 +549,145 @@ async def get_session_biomechanics_data(session_id: str) -> Dict[str, Any]:
         )
 
 
+@router.post("/reboot/generate-krs-report")
+async def generate_krs_from_reboot(session_id: str) -> Dict[str, Any]:
+    """
+    Generate KRS report from Reboot Motion session biomechanics.
+    
+    This endpoint:
+    1. Gets session details from Reboot Motion
+    2. Downloads inverse kinematics and momentum energy CSVs
+    3. Transforms biomechanics data into KRS report
+    4. Returns complete KRS + 4B Framework analysis
+    
+    Args:
+        session_id: Reboot Motion session ID
+        
+    Returns:
+        Complete KRS report with:
+        - KRS scores (creation, transfer, total)
+        - Motor profile type and confidence
+        - 4B Framework metrics (BRAIN, BODY, BAT, BALL)
+        - On-table gain potential
+        
+    Example:
+        POST /api/reboot/generate-krs-report?session_id=7f001c73...
+    """
+    import os
+    import logging
+    import requests
+    import pandas as pd
+    import io
+    
+    logger = logging.getLogger(__name__)
+    
+    # Check credentials
+    has_credentials = os.environ.get('REBOOT_USERNAME') and os.environ.get('REBOOT_PASSWORD')
+    
+    if not has_credentials:
+        logger.warning("⚠️ Reboot Motion credentials not configured")
+        raise HTTPException(
+            status_code=500,
+            detail="Reboot Motion credentials not configured"
+        )
+    
+    try:
+        from sync_service import RebootMotionSync
+        from app.transformers.reboot_to_krs import RebootToKRSTransformer
+        
+        logger.info(f"📊 Generating KRS report for session {session_id[:8]}...")
+        
+        # 1. Get session details
+        sync = RebootMotionSync()
+        session = sync.get_session_details(session_id)
+        
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        players = session.get('players', [])
+        if not players:
+            raise HTTPException(status_code=404, detail="No players found in session")
+        
+        player = players[0]
+        org_player_id = player.get('org_player_id')
+        
+        logger.info(f"   Player: {player.get('first_name')} {player.get('last_name')}")
+        
+        # 2. Get biomechanics export data
+        ik_export = sync.get_data_export(
+            session_id=session_id,
+            org_player_id=org_player_id,
+            movement_type_id=1,
+            data_type='inverse-kinematics'
+        )
+        
+        me_export = sync.get_data_export(
+            session_id=session_id,
+            org_player_id=org_player_id,
+            movement_type_id=1,
+            data_type='momentum-energy'
+        )
+        
+        # Get download URLs
+        ik_urls = ik_export.get('download_urls', [])
+        me_urls = me_export.get('download_urls', [])
+        
+        if not ik_urls or not me_urls:
+            raise HTTPException(
+                status_code=500,
+                detail="Biomechanics download URLs not available"
+            )
+        
+        logger.info(f"   ✅ Got download URLs")
+        
+        # 3. Download CSVs
+        logger.info(f"   📥 Downloading inverse kinematics...")
+        ik_response = requests.get(ik_urls[0], timeout=30)
+        ik_response.raise_for_status()
+        ik_df = pd.read_csv(io.StringIO(ik_response.text))
+        logger.info(f"   ✅ Downloaded {len(ik_df)} frames")
+        
+        logger.info(f"   📥 Downloading momentum energy...")
+        me_response = requests.get(me_urls[0], timeout=30)
+        me_response.raise_for_status()
+        me_df = pd.read_csv(io.StringIO(me_response.text))
+        logger.info(f"   ✅ Downloaded {len(me_df)} frames")
+        
+        # 4. Transform to KRS
+        logger.info(f"   🔄 Transforming to KRS report...")
+        transformer = RebootToKRSTransformer()
+        
+        player_info = {
+            'first_name': player.get('first_name'),
+            'last_name': player.get('last_name'),
+            'org_player_id': org_player_id
+        }
+        
+        krs_report = transformer.transform_session(ik_df, me_df, player_info)
+        
+        # 5. Add session metadata
+        krs_report['session_id'] = session_id
+        krs_report['session_date'] = session.get('session_date')
+        krs_report['session_status'] = session.get('status')
+        
+        logger.info(f"✅ KRS report generated successfully!")
+        logger.info(f"   KRS: {krs_report['krs']['krs_total']} ({krs_report['krs']['krs_level']})")
+        logger.info(f"   Motor Profile: {krs_report['motor_profile']['type']} ({krs_report['motor_profile']['confidence']}%)")
+        
+        return krs_report
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Failed to generate KRS report: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate KRS report: {str(e)}"
+        )
+
+
 # ============================================================================
 # EXAMPLE USAGE
 # ============================================================================
