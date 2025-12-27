@@ -209,28 +209,37 @@ Improvement:          +0      +3-4      +6-8      +8-10 mph
 
 ## Comparison with Connor Gray
 
-### Why Connor's KRS is Higher (48.5 vs 48.1)
-From earlier thread, Connor Gray:
-- **KRS Total**: 48.5/100
-- **Creation Score**: 35.0/100 (vs Eric's 18.0)
-- **Transfer Score**: 57.6/100 (vs Eric's 68.1)
-- **Exit Velocity**: 110 mph (vs Eric's 98 mph)
+### 🚨 CORRECTION: Connor Has IDENTICAL Issues
 
-**Difference**: Connor has **better rotation** (higher Creation), Eric has **better arm speed** (higher Transfer).
+**ACTUAL Connor Gray Data** (Session 4f1a7010-1324-469d-8e1a-e05a1dc45f2e, Dec 20, 2025):
 
-### What This Tells Us
-1. **Eric's Transfer** (68.1) > **Connor's Transfer** (57.6)
-   - Eric has elite hand/arm speed
-   - Problem is he's NOT using his body
+| Metric | Connor Gray | Eric Williams | Difference |
+|--------|-------------|---------------|------------|
+| **Pelvis Rotation** | 3.00° | 2.87° | +0.13° (IDENTICAL) |
+| **Torso Rotation** | 2.22° | 1.95° | +0.27° (IDENTICAL) |
+| **% of Target (Pelvis)** | 6.7% | 6.4% | Tie |
+| **% of Target (Torso)** | 6.3% | 5.6% | Tie |
+| **Peak Energy** | 18,149 J | 22,680 J | Eric higher |
+| **Lower Half** | 4,062 J | 8,662 J | Eric 2.1x |
+| **KRS Level** | FOUNDATION | FOUNDATION | Tie |
 
-2. **Connor's Creation** (35.0) > **Eric's Creation** (18.0)
-   - Connor generates more rotation/separation
-   - Even though he ALSO has issues (both at FOUNDATION)
+### What This Actually Tells Us
+1. **BOTH Players Have Same Rotation Deficit**
+   - Connor: 3.00° pelvis (only 6.7% of 45° target)
+   - Eric: 2.87° pelvis (only 6.4% of 45° target)
+   - **Difference is 0.13° = statistically ZERO**
 
-3. **Eric's Potential** > **Connor's Current**
-   - Eric's 82 mph is from arms alone
-   - If Eric adds body (like Connor), he'll exceed Connor's 110 mph
-   - Estimated ceiling: 92+ mph bat speed, 110+ mph exit velocity
+2. **BOTH Need Identical Drill Prescription**
+   - Drill #4: Hip Load & Fire (increase rotation)
+   - Drill #7: Connection Lock (fix disconnection)
+   - Drill #1: Rope Rhythm Control (fix sequencing)
+
+3. **Both Are at FOUNDATION Level**
+   - Same mechanical issue: disconnection + minimal rotation
+   - Same motor pattern: arms-dominant swing
+   - Same coaching need: learn to use body rotation
+
+**See CONNOR_GRAY_CORRECTION.md for full details on this correction.**
 
 ---
 
