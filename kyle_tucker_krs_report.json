@@ -22,9 +22,9 @@
   "transfer_score": 100,
   "total_krs": 100.0,
   "motor_profile": {
-    "type": "SYNCER",
-    "confidence": 0.9,
-    "description": "Elite body rotation with good separation"
+    "type": "TITAN",
+    "confidence": 0.95,
+    "description": "Elite mechanics across all components - MLB professional level"
   },
   "level": "ELITE (Top 1%)"
 }
