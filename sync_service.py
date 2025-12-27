@@ -91,14 +91,15 @@ class RebootMotionSync:
             logger.error(f"❌ Failed to obtain OAuth token: {e}")
             raise
     
-    def _make_request(self, endpoint: str, params: Optional[Dict[str, Any]] = None, method: str = 'GET') -> Any:
+    def _make_request(self, endpoint: str, params: Optional[Dict[str, Any]] = None, method: str = 'GET', json_body: Optional[Dict[str, Any]] = None) -> Any:
         """
         Make authenticated HTTP request to Reboot Motion API.
         
         Args:
             endpoint: API endpoint (e.g., '/players')
-            params: Optional query parameters
+            params: Optional query parameters (for GET requests)
             method: HTTP method (GET, POST, etc.)
+            json_body: Optional JSON body (for POST requests)
         
         Returns:
             JSON response data
@@ -116,7 +117,7 @@ class RebootMotionSync:
             if method == 'GET':
                 response = requests.get(url, headers=headers, params=params, timeout=30)
             elif method == 'POST':
-                response = requests.post(url, headers=headers, json=params, timeout=30)
+                response = requests.post(url, headers=headers, params=params, json=json_body, timeout=30)
             else:
                 raise ValueError(f"Unsupported HTTP method: {method}")
             
@@ -190,27 +191,127 @@ class RebootMotionSync:
             logger.error(f"❌ Failed to fetch sessions for player {player_id}: {e}")
             return []
     
-    def get_session_biomechanics(self, session_id: str) -> Dict[str, Any]:
+    def get_session_biomechanics(self, session_id: str, org_player_id: str = None) -> Dict[str, Any]:
         """
+        DEPRECATED: Use get_data_export() instead.
         Get biomechanics data for a specific session from Reboot Motion API.
+        
+        Args:
+            session_id: Reboot Motion session ID
+            org_player_id: Optional player ID (will be fetched from session if not provided)
+        
+        Returns:
+            Biomechanics data dictionary
+        """
+        logger.warning("⚠️ get_session_biomechanics is deprecated, use get_data_export() instead")
+        
+        # If no player ID provided, fetch session details to get it
+        if not org_player_id:
+            session = self.get_session_details(session_id)
+            players = session.get('players', [])
+            if players:
+                org_player_id = players[0].get('org_player_id')
+        
+        if not org_player_id:
+            logger.error("Cannot fetch biomechanics: no player ID available")
+            return {}
+        
+        return self.get_data_export(session_id, org_player_id, movement_type_id=1, data_type='inverse-kinematics')
+    
+    def get_session_details(self, session_id: str) -> Dict[str, Any]:
+        """
+        Get detailed session information including player participants.
+        Uses the correct endpoint: /session/{session_id} (singular)
         
         Args:
             session_id: Reboot Motion session ID
         
         Returns:
-            Biomechanics data dictionary
+            Session details with players array
         """
-        logger.info(f"📊 Fetching biomechanics for session {session_id}...")
+        logger.info(f"📋 Fetching session details for {session_id[:8]}...")
         
         try:
-            # Fetch biomechanics data from Reboot Motion API
-            bio_data = self._make_request(f'/sessions/{session_id}/biomechanics')
+            # Use singular /session/ endpoint as per Bob's guidance
+            session_detail = self._make_request(f'/session/{session_id}')
             
-            logger.info(f"✅ Fetched biomechanics data for session {session_id}")
-            return bio_data
+            logger.info(f"✅ Fetched session details for {session_id[:8]}")
+            
+            # Log player info if available
+            if 'players' in session_detail:
+                players = session_detail.get('players', [])
+                logger.info(f"   Found {len(players)} players in session")
+            
+            return session_detail
             
         except Exception as e:
-            logger.error(f"❌ Failed to fetch biomechanics for session {session_id}: {e}")
+            logger.error(f"❌ Failed to fetch session details for {session_id}: {e}")
+            return {}
+    
+    def get_data_export(self, session_id: str, org_player_id: str, 
+                       movement_type_id: int = 1, data_type: str = 'inverse-kinematics') -> Dict[str, Any]:
+        """
+        Export biomechanics data using the Data Export endpoint.
+        
+        This is the CORRECT way to get biomechanics data per Bob's guidance.
+        The old /processed_data endpoint is deprecated.
+        
+        Args:
+            session_id: Reboot Motion session ID
+            org_player_id: Organization player ID
+            movement_type_id: Movement type ID (1 = baseball-hitting, 2 = baseball-pitching)
+            data_type: Data type to export (default: 'inverse-kinematics')
+                      Options: 'inverse-kinematics', 'momentum-energy', 'joint-angles'
+        
+        Returns:
+            Export data dictionary (may include 'url' for download or direct 'data')
+        
+        Example:
+            >>> sync = RebootMotionSync()
+            >>> data = sync.get_data_export(
+            ...     'abc-123',
+            ...     'player-xyz',
+            ...     movement_type_id=1,
+            ...     data_type='inverse-kinematics'
+            ... )
+        """
+        logger.info(f"📊 Exporting data for session {session_id[:8]}...")
+        logger.info(f"   Player: {org_player_id[:8]}...")
+        logger.info(f"   Movement type ID: {movement_type_id}")
+        logger.info(f"   Data type: {data_type}")
+        
+        try:
+            # Build request body with REQUIRED fields per API docs
+            request_body = {
+                'session_id': session_id,
+                'org_player_id': org_player_id,
+                'movement_type_id': movement_type_id,
+                'data_type': data_type
+            }
+            
+            # POST request to data_export endpoint
+            export_data = self._make_request(
+                '/data_export',
+                method='POST',
+                json_body=request_body
+            )
+            
+            logger.info(f"✅ Data export successful for session {session_id[:8]}")
+            
+            # Log response structure
+            if isinstance(export_data, dict):
+                logger.info(f"   Response keys: {list(export_data.keys())}")
+                if 'url' in export_data:
+                    logger.info(f"   📥 Download URL provided")
+                if 'data' in export_data:
+                    data = export_data.get('data')
+                    if isinstance(data, list):
+                        logger.info(f"   📊 Direct data: {len(data)} records")
+            
+            return export_data
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to export data for session {session_id}: {e}")
             return {}
     
     def sync_players(self, db: Session) -> int:
