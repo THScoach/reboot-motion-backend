@@ -1618,7 +1618,7 @@
             playerResultsDiv.classList.remove('show');
             
             try {
-                const response = await fetch(`/api/players/${playerId}/sessions?limit=10`);
+                const response = await fetch(`/api/reboot/players/${playerId}/sessions?limit=10`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
@@ -1688,8 +1688,10 @@
             document.getElementById('krsLoading').scrollIntoView({ behavior: 'smooth' });
             
             try {
-                // Fetch session report from API
-                const response = await fetch(`/api/sessions/${sessionId}/report`);
+                // Generate KRS report from Reboot biomechanics
+                const response = await fetch(`/api/reboot/generate-krs-report?session_id=${sessionId}`, {
+                    method: 'POST'
+                });
                 
                 if (!response.ok) {
                     throw new Error(`Failed to fetch report: ${response.status}`);
