@@ -152,6 +152,67 @@ class RebootMotionSync:
             logger.error(f"❌ Failed to fetch players from Reboot Motion: {e}")
             raise
     
+    def get_player_sessions(self, player_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        Get sessions for a specific player from Reboot Motion API.
+        
+        Args:
+            player_id: Reboot Motion player ID  
+            limit: Maximum number of sessions to return
+        
+        Returns:
+            List of session dictionaries
+        """
+        logger.info(f"📋 Fetching sessions for player {player_id}...")
+        
+        try:
+            # Fetch ALL sessions (Reboot API doesn't support player filtering directly)
+            all_sessions = self._make_request('/sessions', params={'limit': 1000})
+            
+            if not isinstance(all_sessions, list):
+                logger.error(f"Expected list of sessions, got: {type(all_sessions)}")
+                return []
+            
+            # Filter sessions for this specific player
+            # Check in participant_ids array
+            player_sessions = []
+            for session in all_sessions:
+                participant_ids = session.get('participant_ids', [])
+                if player_id in participant_ids:
+                    player_sessions.append(session)
+                    if len(player_sessions) >= limit:
+                        break
+            
+            logger.info(f"✅ Found {len(player_sessions)} sessions for player {player_id}")
+            return player_sessions
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to fetch sessions for player {player_id}: {e}")
+            return []
+    
+    def get_session_biomechanics(self, session_id: str) -> Dict[str, Any]:
+        """
+        Get biomechanics data for a specific session from Reboot Motion API.
+        
+        Args:
+            session_id: Reboot Motion session ID
+        
+        Returns:
+            Biomechanics data dictionary
+        """
+        logger.info(f"📊 Fetching biomechanics for session {session_id}...")
+        
+        try:
+            # Fetch biomechanics data from Reboot Motion API
+            bio_data = self._make_request(f'/sessions/{session_id}/biomechanics')
+            
+            logger.info(f"✅ Fetched biomechanics data for session {session_id}")
+            return bio_data
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to fetch biomechanics for session {session_id}: {e}")
+            return {}
+    
     def sync_players(self, db: Session) -> int:
         """
         Sync all players from Reboot Motion API.

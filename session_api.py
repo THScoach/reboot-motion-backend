@@ -278,6 +278,89 @@ async def search_reboot_players(query: str) -> Dict[str, Any]:
         }
 
 
+@router.get("/reboot/players/{player_id}/sessions")
+async def get_reboot_player_sessions(
+    player_id: str,
+    limit: int = 10
+) -> Dict[str, Any]:
+    """
+    Get sessions for a player from Reboot Motion API
+    
+    Args:
+        player_id: Reboot Motion player ID
+        limit: Max sessions to return (default 10)
+        
+    Returns:
+        List of session dictionaries with biomechanics data
+        
+    Example:
+        GET /api/reboot/players/0068edb2-6243-4a48-8d9b-da6be14c4e69/sessions?limit=5
+    """
+    import os
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # Check if Reboot credentials are available
+    has_credentials = os.environ.get('REBOOT_USERNAME') and os.environ.get('REBOOT_PASSWORD')
+    
+    if not has_credentials:
+        logger.warning("⚠️ Reboot Motion credentials not configured")
+        return {
+            'player_id': player_id,
+            'sessions': [],
+            'count': 0,
+            'error': 'Reboot Motion credentials not configured'
+        }
+    
+    try:
+        from sync_service import RebootMotionSync
+        
+        # Initialize Reboot Motion sync
+        logger.info(f"🔄 Fetching sessions for player {player_id}...")
+        sync = RebootMotionSync()
+        
+        # Get sessions from Reboot Motion API
+        sessions = sync.get_player_sessions(player_id, limit=limit)
+        
+        if not sessions:
+            logger.warning(f"⚠️ No sessions found for player {player_id}")
+            return {
+                'player_id': player_id,
+                'sessions': [],
+                'count': 0,
+                'message': 'No sessions found for this player'
+            }
+        
+        logger.info(f"✅ Found {len(sessions)} sessions for player {player_id}")
+        
+        # Return sessions with metadata
+        return {
+            'player_id': player_id,
+            'sessions': sessions,
+            'count': len(sessions),
+            'limit': limit,
+            'source': 'reboot_motion_api'
+        }
+        
+    except ValueError as e:
+        logger.error(f"❌ Credential error: {e}")
+        return {
+            'player_id': player_id,
+            'sessions': [],
+            'count': 0,
+            'error': f'Reboot Motion credentials error: {str(e)}'
+        }
+    except Exception as e:
+        logger.error(f"❌ Failed to fetch sessions for player {player_id}: {e}")
+        return {
+            'player_id': player_id,
+            'sessions': [],
+            'count': 0,
+            'error': f'Failed to fetch sessions: {str(e)}'
+        }
+
+
 # ============================================================================
 # EXAMPLE USAGE
 # ============================================================================
