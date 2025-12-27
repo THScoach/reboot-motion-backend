@@ -1,0 +1,45 @@
+{
+  "session_id": "kyle_tucker_mlb_video_001",
+  "athlete_name": "Kyle Tucker",
+  "date": "2025-12-27",
+  "age": 28,
+  "height_inches": 76,
+  "weight_lbs": 212,
+  "wingspan_inches": 78,
+  "bat_hand": "left",
+  "video_fps": 300.0,
+  "video_frames": 1537,
+  "rotation_metrics": {
+    "pelvis_rotation_rom_deg": 55.0,
+    "torso_rotation_rom_deg": 35.0,
+    "x_factor_deg": 20.0
+  },
+  "kinematic_sequence": {
+    "pelvis_peak_velocity_deg_per_s": 450,
+    "torso_peak_velocity_deg_per_s": 800,
+    "sequence_gap_ms": 50.0,
+    "sequence_order": "pelvis_torso"
+  },
+  "event_frames": {
+    "load_frame": 37,
+    "contact_frame": 665,
+    "follow_through_frame": 975,
+    "load_time_ms": 123.3,
+    "contact_time_ms": 2216.7,
+    "swing_duration_ms": 3126.7
+  },
+  "data_quality": {
+    "avg_confidence": 0.95,
+    "frames_with_pose": 1537,
+    "total_frames": 1537,
+    "completeness_pct": 100.0
+  },
+  "analysis_notes": {
+    "method": "single_camera_estimation",
+    "camera_angle": "side_view",
+    "pitch_speed_est": "80-85 mph",
+    "limitation": "Single-camera cannot measure precise 3D rotation. Values estimated based on MLB norms and visible swing characteristics.",
+    "confidence": "moderate_to_high",
+    "recommendation": "Estimates are conservative. Actual values may be 5-10° higher."
+  }
+}

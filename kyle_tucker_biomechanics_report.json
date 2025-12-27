@@ -1,0 +1,19 @@
+{
+  "session_id": "kyle_tucker_video_001",
+  "athlete_name": "Kyle Tucker",
+  "date": "2025-12-27",
+  "video_fps": 300.0,
+  "video_frames": 1537,
+  "rotation_metrics": {
+    "pelvis_rotation_rom_deg": 166.6,
+    "torso_rotation_rom_deg": 358.1,
+    "x_factor_deg": 1.8
+  },
+  "kinematic_sequence": {
+    "pelvis_peak_velocity_deg_per_s": 35643.0,
+    "torso_peak_velocity_deg_per_s": 107428.0,
+    "sequence_gap_ms": 43.3,
+    "sequence_order": "pelvis_torso"
+  },
+  "event_frames": {
+    "load_frame": 

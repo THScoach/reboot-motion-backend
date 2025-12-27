@@ -1,0 +1,30 @@
+{
+  "player_name": "Kyle Tucker",
+  "session_id": "kyle_tucker_mlb_video_001",
+  "session_date": "2025-12-27",
+  "age": 28,
+  "height_inches": 76,
+  "weight_lbs": 212,
+  "wingspan_inches": 78,
+  "bat_weight_oz": 32,
+  "team": "Chicago Cubs (Free Agent)",
+  "pelvis_rotation_deg": 55.0,
+  "torso_rotation_deg": 35.0,
+  "x_factor_deg": 20.0,
+  "pelvis_peak_velocity": 450,
+  "torso_peak_velocity": 800,
+  "sequence_gap_ms": 50.0,
+  "estimated_bat_speed_mph": 75.0,
+  "estimated_exit_velocity_mph": 95.0,
+  "pitch_speed_est_mph": 85.0,
+  "exospeed_capacity_mph": 69.3,
+  "creation_score": 100,
+  "transfer_score": 100,
+  "total_krs": 100.0,
+  "motor_profile": {
+    "type": "SYNCER",
+    "confidence": 0.9,
+    "description": "Elite body rotation with good separation"
+  },
+  "level": "ELITE (Top 1%)"
+}
