@@ -361,6 +361,67 @@ async def get_reboot_player_sessions(
         }
 
 
+@router.post("/reboot/sync")
+async def trigger_reboot_sync() -> Dict[str, Any]:
+    """
+    Trigger full sync of Reboot Motion data to database
+    
+    Syncs:
+    - All players
+    - All sessions  
+    - All biomechanics data
+    
+    This can take several minutes for large datasets.
+    
+    Returns:
+        Sync results with counts
+        
+    Example:
+        POST /api/reboot/sync
+    """
+    import os
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # Check if Reboot credentials are available
+    has_credentials = os.environ.get('REBOOT_USERNAME') and os.environ.get('REBOOT_PASSWORD')
+    
+    if not has_credentials:
+        logger.warning("⚠️ Reboot Motion credentials not configured")
+        return {
+            'status': 'error',
+            'error': 'Reboot Motion credentials not configured. Please set REBOOT_USERNAME and REBOOT_PASSWORD environment variables.'
+        }
+    
+    try:
+        from sync_service import RebootMotionSync
+        
+        logger.info("🚀 Starting full Reboot Motion sync...")
+        sync = RebootMotionSync()
+        
+        # Run the async sync
+        result = await sync.sync_all_data()
+        
+        logger.info(f"✅ Sync completed: {result}")
+        return result
+        
+    except ValueError as e:
+        logger.error(f"❌ Credential error: {e}")
+        return {
+            'status': 'error',
+            'error': f'Reboot Motion credentials error: {str(e)}'
+        }
+    except Exception as e:
+        logger.error(f"❌ Sync failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            'status': 'error',
+            'error': f'Sync failed: {str(e)}'
+        }
+
+
 # ============================================================================
 # EXAMPLE USAGE
 # ============================================================================
