@@ -33,7 +33,9 @@ class RebootToKRSTransformer:
         self, 
         ik_df: pd.DataFrame, 
         me_df: pd.DataFrame,
-        player_info: Dict[str, Any] = None
+        player_info: Dict[str, Any] = None,
+        external_bat_speed_mph: float = None,
+        external_bat_speed_avg_mph: float = None
     ) -> Dict[str, Any]:
         """
         Transform a session's biomechanics data into a complete KRS report.
@@ -42,10 +44,15 @@ class RebootToKRSTransformer:
             ik_df: Inverse kinematics dataframe
             me_df: Momentum energy dataframe
             player_info: Optional player metadata
+            external_bat_speed_mph: Peak bat speed from external sensor (e.g., Blast Motion)
+            external_bat_speed_avg_mph: Average bat speed from external sensor
             
         Returns:
             Complete KRS report dictionary
         """
+        # Store external data for use in calculations
+        self.external_bat_speed_mph = external_bat_speed_mph
+        self.external_bat_speed_avg_mph = external_bat_speed_avg_mph
         logger.info("🔄 Starting KRS transformation...")
         
         try:
@@ -192,8 +199,12 @@ class RebootToKRSTransformer:
             else:
                 sequence_score = 75  # Default
             
-            # Bat speed (if available)
-            if 'bat_kinetic_energy' in me_df.columns:
+            # Bat speed (from external sensor or biomechanics)
+            if hasattr(self, 'external_bat_speed_mph') and self.external_bat_speed_mph:
+                # Use external sensor data (Blast Motion, etc.)
+                # 82 mph bat speed = ~100 score, scale linearly
+                bat_speed_score = min(100, (self.external_bat_speed_mph / 82) * 100)
+            elif 'bat_kinetic_energy' in me_df.columns:
                 peak_bat_energy = me_df['bat_kinetic_energy'].max()
                 bat_speed_score = min(100, (peak_bat_energy / 150) * 100)  # 150 J = 100
             else:
@@ -372,8 +383,12 @@ class RebootToKRSTransformer:
     def _extract_ball_metrics(self, ik_df: pd.DataFrame, me_df: pd.DataFrame) -> Dict[str, Any]:
         """Extract BALL metrics (Outcomes)"""
         try:
-            # Exit velocity estimate from peak bat energy
-            if 'bat_kinetic_energy' in me_df.columns:
+            # Exit velocity estimate from external bat speed or peak bat energy
+            if hasattr(self, 'external_bat_speed_mph') and self.external_bat_speed_mph:
+                # Use external sensor data (Blast Motion, etc.)
+                # Exit velo is typically 1.2-1.5x bat speed for good contact
+                exit_velocity_mph = min(110, self.external_bat_speed_mph * 1.2)
+            elif 'bat_kinetic_energy' in me_df.columns:
                 peak_bat_energy = me_df['bat_kinetic_energy'].max()
                 # E = 0.5 * m * v^2, solve for v
                 # Rough approximation: higher energy = higher exit velo
