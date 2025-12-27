@@ -422,6 +422,133 @@ async def trigger_reboot_sync() -> Dict[str, Any]:
         }
 
 
+@router.get("/reboot/sessions/{session_id}/biomechanics")
+async def get_session_biomechanics_data(session_id: str) -> Dict[str, Any]:
+    """
+    Get biomechanics data for a session from Reboot Motion
+    
+    This endpoint:
+    1. Fetches session details to get player info
+    2. Exports biomechanics data (inverse-kinematics & momentum-energy)
+    3. Returns download URLs for CSV files
+    
+    Args:
+        session_id: Reboot Motion session ID
+        
+    Returns:
+        Session info with biomechanics download URLs
+        
+    Example:
+        GET /api/reboot/sessions/7f001c73-0c0c-4cb0-a49f-73ad27b78f14/biomechanics
+    """
+    import os
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # Check credentials
+    has_credentials = os.environ.get('REBOOT_USERNAME') and os.environ.get('REBOOT_PASSWORD')
+    
+    if not has_credentials:
+        logger.warning("⚠️ Reboot Motion credentials not configured")
+        return {
+            'error': 'Reboot Motion credentials not configured',
+            'session_id': session_id
+        }
+    
+    try:
+        from sync_service import RebootMotionSync
+        
+        logger.info(f"📊 Fetching biomechanics for session {session_id[:8]}...")
+        sync = RebootMotionSync()
+        
+        # 1. Get session details to find player
+        session = sync.get_session_details(session_id)
+        
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        players = session.get('players', [])
+        if not players:
+            raise HTTPException(status_code=404, detail="No players found in session")
+        
+        player = players[0]
+        org_player_id = player.get('org_player_id')
+        
+        logger.info(f"   Player: {player.get('first_name')} {player.get('last_name')}")
+        
+        # 2. Export biomechanics data
+        result = {
+            'session_id': session_id,
+            'session_date': session.get('session_date'),
+            'status': session.get('status'),
+            'player': {
+                'org_player_id': org_player_id,
+                'first_name': player.get('first_name'),
+                'last_name': player.get('last_name')
+            },
+            'biomechanics': {}
+        }
+        
+        # Get inverse kinematics
+        try:
+            ik_data = sync.get_data_export(
+                session_id=session_id,
+                org_player_id=org_player_id,
+                movement_type_id=1,
+                data_type='inverse-kinematics'
+            )
+            result['biomechanics']['inverse_kinematics'] = {
+                'available': True,
+                'download_urls': ik_data.get('download_urls', []),
+                'data_format': ik_data.get('data_format'),
+                'data_type': ik_data.get('data_type')
+            }
+            logger.info(f"   ✅ Inverse kinematics: {len(ik_data.get('download_urls', []))} files")
+        except Exception as e:
+            logger.error(f"   ❌ Inverse kinematics failed: {e}")
+            result['biomechanics']['inverse_kinematics'] = {
+                'available': False,
+                'error': str(e)
+            }
+        
+        # Get momentum energy
+        try:
+            me_data = sync.get_data_export(
+                session_id=session_id,
+                org_player_id=org_player_id,
+                movement_type_id=1,
+                data_type='momentum-energy'
+            )
+            result['biomechanics']['momentum_energy'] = {
+                'available': True,
+                'download_urls': me_data.get('download_urls', []),
+                'data_format': me_data.get('data_format'),
+                'data_type': me_data.get('data_type')
+            }
+            logger.info(f"   ✅ Momentum energy: {len(me_data.get('download_urls', []))} files")
+        except Exception as e:
+            logger.error(f"   ❌ Momentum energy failed: {e}")
+            result['biomechanics']['momentum_energy'] = {
+                'available': False,
+                'error': str(e)
+            }
+        
+        logger.info(f"✅ Biomechanics data retrieved for {session_id[:8]}")
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Failed to get biomechanics: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve biomechanics data: {str(e)}"
+        )
+
+
 # ============================================================================
 # EXAMPLE USAGE
 # ============================================================================
